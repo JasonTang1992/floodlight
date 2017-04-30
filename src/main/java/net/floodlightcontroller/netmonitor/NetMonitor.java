@@ -2,7 +2,9 @@ package net.floodlightcontroller.netmonitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -20,6 +22,7 @@ import org.projectfloodlight.openflow.protocol.OFStatsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsType;
 import org.projectfloodlight.openflow.protocol.OFType;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.Masked;
 
@@ -40,8 +43,10 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 	Logger logger;
 	
 	PollingWroker pollingworker;
-	private final IThreadPoolService scheduler = new ThreadPool();
-	
+//	private final IThreadPoolService scheduler = new ThreadPool();
+    private final ScheduledExecutorService scheduler =
+    	       Executors.newScheduledThreadPool(1);
+
 	
 	@Override
 	public String getName() {
@@ -84,10 +89,10 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
 			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
 			
-			ScheduledExecutorService e = scheduler.getScheduledExecutor();
+//			ScheduledExecutorService e = scheduler.getScheduledExecutor();
 //			e.scheduleAtFixedRate(new PollingWroker(), 1, 5, TimeUnit.SECONDS);
 //			pollingworker = new PollingWroker();
-			pollingworker.run();
+//			pollingworker.run();
 //			e.execute(pollingworker);
 			
 			OFFlowAdd pkt = sw.getOFFactory().buildFlowAdd()
@@ -102,6 +107,8 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 					.build();
 			if(sw.write(pkt)) logger.info("send success");
 			else logger.info("send failed");
+//			ScheduledExecutorService e = scheduler.getScheduledExecutor();
+			scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
 
 			break;
 		case FLOW_REMOVED:
@@ -123,6 +130,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			break;
 		case STATS_REQUEST:
 			logger.info("STATS_REQUEST message");
+			
 			break;
 		default:
 			break;
@@ -170,6 +178,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		floodlightProvider.addOFMessageListener(OFType.FLOW_MOD, this);
 		floodlightProvider.addOFMessageListener(OFType.STATS_REPLY, this);
 		floodlightProvider.addOFMessageListener(OFType.STATS_REQUEST, this);
+		scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
 	
 	}
 
