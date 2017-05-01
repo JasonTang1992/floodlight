@@ -108,7 +108,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			if(sw.write(pkt)) logger.info("send success");
 			else logger.info("send failed");
 //			ScheduledExecutorService e = scheduler.getScheduledExecutor();
-			scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
+//			scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
 
 			break;
 		case FLOW_REMOVED:
@@ -167,7 +167,6 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		pollingworker = new PollingWroker();
 //		final ScheduledFuture<?> workerhandle = 
 //				scheduler.scheduleAtFixedRate(pollingworker, 5, 1, TimeUnit.SECONDS);
-
 	}
 
 	@Override
