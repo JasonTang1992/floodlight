@@ -4,10 +4,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.types.DatapathId;
+
+import net.floodlightcontroller.core.IOFSwitch;
 
 public class Switch {
 	
 	ArrayList<Flow> flows = new ArrayList<Flow>();
+	IOFSwitch sw = null;
+	DatapathId id = null;
 
 	public boolean contains(Match match) {
 		// TODO Auto-generated method stub

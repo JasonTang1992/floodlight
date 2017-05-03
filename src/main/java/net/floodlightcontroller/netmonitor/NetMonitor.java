@@ -68,7 +68,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 	@Override
 	public net.floodlightcontroller.core.IListener.Command receive(IOFSwitch sw, OFMessage msg,
 			FloodlightContext cntx) {
-		SwitchMap swmap = SwitchMap.getMap();
+		SwitchMap swmap = SwitchMap.getInstance();
 		if(!swmap.contains(sw.getId()))
 		{
 			swmap.addSwitch(sw.getId());

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -18,6 +19,7 @@ import org.projectfloodlight.openflow.protocol.OFStatsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsRequestFlags;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.Masked;
 import org.projectfloodlight.openflow.types.OFGroup;
@@ -45,11 +47,15 @@ public class PollingWroker implements Runnable {
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		Map<Match,Flow> scheduledmap = ScheduledMap.getInstance().getScheduledMap(timeout);
+		Map<Match, DatapathId> scheduledmap = ScheduledMap.getInstance().getScheduledMap(timeout);
+		Entry<Double,Map<Match,DatapathId>tmp;
 		Iterator it = scheduledmap.entrySet().iterator();
 		while(it.hasNext())
 		{
+			tmp = (Entry<Double, Map<Match, DatapathId>>) it.next();
+			
 			logger.info("PollingWorker is working");
+			
 			polling(this.flow,this.sw,this.cntx);
 		}
 	}
