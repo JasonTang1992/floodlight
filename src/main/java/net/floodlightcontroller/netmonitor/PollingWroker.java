@@ -98,6 +98,9 @@ public class PollingWroker implements Runnable {
 		logger.info(((OFStatsReply)values.get(0)).getType().toString());
 		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
 		
+//		SwitchMap.getInstance().update(flow.match,sw.getId(), 
+//				(((OFFlowStatsReply)values).getEntries()).get(0), counter);
+		
 //		logger.info(String.valueOf(reply.size()));
 //		logger.info(reply.get(0).getStatsType().toString());
 		
