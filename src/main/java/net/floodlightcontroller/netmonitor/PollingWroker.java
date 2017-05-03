@@ -3,7 +3,9 @@ package net.floodlightcontroller.netmonitor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -29,18 +31,27 @@ import net.floodlightcontroller.core.IOFSwitch;
 
 public class PollingWroker implements Runnable {
 	
-	Flow flow = null;
 	IOFSwitch sw = null;
 	FloodlightContext cntx;
+	double timeout = 0;
 	
 	Logger logger = Logger.getLogger(this.getClass().toString());
+	
+	public PollingWroker(double timeout)
+	{
+		this.timeout = timeout;
+	}
 
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		logger.info("PollingWorker is working");
-		polling(this.flow,this.sw,this.cntx);
-
+		Map<Match,Flow> scheduledmap = ScheduledMap.getInstance().getScheduledMap(timeout);
+		Iterator it = scheduledmap.entrySet().iterator();
+		while(it.hasNext())
+		{
+			logger.info("PollingWorker is working");
+			polling(this.flow,this.sw,this.cntx);
+		}
 	}
 	
 	public int polling(Flow flow,IOFSwitch sw, FloodlightContext cntx)
