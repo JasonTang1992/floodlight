@@ -50,6 +50,11 @@ public class Switch {
 		}
 		
 	}
+	
+	public Flow getFlow(Match match)
+	{
+		return null;
+	}
 
 	public boolean contains(long xid) {
 		// TODO Auto-generated method stub

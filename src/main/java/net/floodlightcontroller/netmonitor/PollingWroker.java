@@ -48,15 +48,19 @@ public class PollingWroker implements Runnable {
 	public void run() {
 		// TODO Auto-generated method stub
 		Map<Match, DatapathId> scheduledmap = ScheduledMap.getInstance().getScheduledMap(timeout);
-		Entry<Double,Map<Match,DatapathId>tmp;
+		Entry<Match,DatapathId>tmp;
 		Iterator it = scheduledmap.entrySet().iterator();
 		while(it.hasNext())
 		{
-			tmp = (Entry<Double, Map<Match, DatapathId>>) it.next();
+			tmp = (Entry<Match, DatapathId>) it.next();
 			
 			logger.info("PollingWorker is working");
 			
-			polling(this.flow,this.sw,this.cntx);
+			
+			
+			polling(SwitchMap.getInstance().getSwitch(tmp.getValue()).getFlow(tmp.getKey()),
+					SwitchMap.getInstance().getSwitch(tmp.getValue()).sw,
+					this.cntx);
 		}
 	}
 	
@@ -98,13 +102,6 @@ public class PollingWroker implements Runnable {
 //		logger.info(reply.get(0).getStatsType().toString());
 		
 		return 0;
-	}
-	
-	public void init(Flow flow,IOFSwitch sw, FloodlightContext cntx)
-	{
-		this.flow = flow;
-		this.sw = sw;
-		this.cntx = cntx;
 	}
 	
 }

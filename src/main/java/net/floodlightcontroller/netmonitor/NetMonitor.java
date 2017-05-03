@@ -85,7 +85,6 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 //			}
 			Flow flow = new Flow();
 			flow.match = ((OFPacketIn)msg).getMatch();
-			pollingworker.init(flow, sw, cntx);
 			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
 			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
 			
@@ -164,7 +163,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		// TODO Auto-generated method stub
 		logger = Logger.getLogger(this.getName());
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
-		pollingworker = new PollingWroker();
+		pollingworker = new PollingWroker(1000);
 //		final ScheduledFuture<?> workerhandle = 
 //				scheduler.scheduleAtFixedRate(pollingworker, 5, 1, TimeUnit.SECONDS);
 	}
