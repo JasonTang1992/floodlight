@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
 import org.projectfloodlight.openflow.protocol.OFFlowModFlags;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
 import org.projectfloodlight.openflow.protocol.OFStatsReply;
@@ -98,8 +99,13 @@ public class PollingWroker implements Runnable {
 		logger.info(((OFStatsReply)values.get(0)).getType().toString());
 		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
 		
-//		SwitchMap.getInstance().update(flow.match,sw.getId(), 
-//				(((OFFlowStatsReply)values).getEntries()).get(0), counter);
+		SwitchMap.getInstance().update(flow.match,sw.getId(), 
+				(
+				Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationSec()) + 
+				(Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationNsec())/1000000000)
+				)
+				, 
+				((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getByteCount().getValue());
 		
 //		logger.info(String.valueOf(reply.size()));
 //		logger.info(reply.get(0).getStatsType().toString());

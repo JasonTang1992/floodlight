@@ -71,7 +71,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		SwitchMap swmap = SwitchMap.getInstance();
 		if(!swmap.contains(sw.getId()))
 		{
-			swmap.addSwitch(sw.getId());
+			swmap.addSwitch(sw.getId(), sw);
 		}
 		Switch tmp = swmap.getSwitch(sw.getId());
 		
@@ -99,30 +99,28 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 //							.setMasked(MatchField.IPV4_DST, Masked.of(IPv4Address.of("8.8.8.8"),IPv4Address.of("255.255.255.255")))
 							.build())
 					.setMatch(((OFPacketIn)msg).getMatch())
-//					.setMatch(null)
 					.setHardTimeout(500)
 					.setIdleTimeout(100)
 					.setFlags(flagset)
 					.build();
 			if(sw.write(pkt)) logger.info("send success");
 			else logger.info("send failed");
+			
+			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
+			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFPacketIn)msg).getMatch());
+			
 //			ScheduledExecutorService e = scheduler.getScheduledExecutor();
 //			scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
 
 			break;
 		case FLOW_REMOVED:
 			logger.info("FLOW_REMOVED message");
-//			if(tmp.contains(((OFFlowRemoved)msg).getMatch()))
-//			{
-//				tmp.rmFlow(((OFFlowRemoved)msg).getMatch());
-//			}
-			break;
-		case STATS_REPLY:
-			logger.info("STATS_REPLY message");
-//			if(tmp.contains(((OFStatsReply)msg).getXid()))
-//			{
-//				tmp.update(((OFStatsReply)msg).getXid());
-//			}
+			String log4v;
+			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).getv().toString();
+			
+			logger.info(log4v);
+			
+			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
 			break;
 		case FLOW_MOD:
 			logger.info("FLOW_MOD message");

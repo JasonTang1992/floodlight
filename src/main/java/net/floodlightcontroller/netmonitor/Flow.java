@@ -13,7 +13,7 @@ public class Flow {
 	Match match;
 	
 	double duration;
-	int bytescounter;
+	long bytescounter;
 	Map<Double,Double> v = new HashMap<Double,Double>();
 	Map<Double,Double> a = new HashMap<Double,Double>();
 	
@@ -27,16 +27,19 @@ public class Flow {
 		this.match = match;
 	}
 	
-	public void update(double now,int counter)
+	public void update(double now,long l)
 	{
 		double v,a;
 		v=a=0;
 		
-		v = (counter-this.bytescounter)/(now-this.duration);
+		v = (l-this.bytescounter)/(now-this.duration);
 		a = (v-this.v.get(Double.valueOf(this.duration)).doubleValue())/(now-this.duration);
 		
 		this.v.put(Double.valueOf(now), Double.valueOf(v));
 		this.a.put(Double.valueOf(now), Double.valueOf(a));
+		
+		this.duration = now;
+		this.bytescounter = l;
 	}
 	
 

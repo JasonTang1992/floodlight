@@ -16,9 +16,10 @@ public class Switch {
 	IOFSwitch sw = null;
 	DatapathId id = null;
 
-	public Switch(DatapathId id) {
+	public Switch(DatapathId id,IOFSwitch sw) {
 		// TODO Auto-generated constructor stub
 		this.id = id;
+		this.sw = sw;
 	}
 
 	public boolean contains(Match match) {
@@ -45,10 +46,10 @@ public class Switch {
 		return this.flows.get(match);
 	}
 	
-	public void update(Match match,double now,int counter)
+	public void update(Match match,double now,long l)
 	{
 		Flow flow = this.flows.get(match);
-		flow.update(now, counter);
+		flow.update(now, l);
 	}
 
 

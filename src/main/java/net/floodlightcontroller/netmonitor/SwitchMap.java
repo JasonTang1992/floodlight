@@ -6,6 +6,8 @@ import java.util.Map;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.DatapathId;
 
+import net.floodlightcontroller.core.IOFSwitch;
+
 public class SwitchMap {
 	static SwitchMap map;
 	static Map<Double,Map<Match,Flow>> scheduledmap;
@@ -25,11 +27,11 @@ public class SwitchMap {
 		return switches.containsKey(id);
 	}
 
-	public void addSwitch(DatapathId id) {
+	public void addSwitch(DatapathId id,IOFSwitch sw) {
 		// TODO Auto-generated method stub
 		if(this.contains(id) == false)
 		{
-			this.switches.put(id, new Switch(id));
+			this.switches.put(id, new Switch(id,sw));
 		}
 	}
 
@@ -38,9 +40,9 @@ public class SwitchMap {
 		return this.switches.get(id);
 	}
 	
-	public void update(Match match,DatapathId id,double now,int counter)
+	public void update(Match match,DatapathId id,double now,long l)
 	{
-		this.switches.get(id).update(match, now, counter);
+		this.switches.get(id).update(match, now, l);
 	}
 
 
