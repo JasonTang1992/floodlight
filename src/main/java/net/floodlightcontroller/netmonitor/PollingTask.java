@@ -1,14 +1,28 @@
 package net.floodlightcontroller.netmonitor;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
+import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
 import org.projectfloodlight.openflow.protocol.OFStatsReply;
+import org.projectfloodlight.openflow.protocol.OFStatsRequestFlags;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.OFGroup;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.TableId;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import net.floodlightcontroller.core.FloodlightContext;
+import net.floodlightcontroller.core.IOFSwitch;
 
 /**
  * @author jason
@@ -23,6 +37,9 @@ public class PollingTask implements Runnable {
 	private DatapathId swId;
 	public Date m_Date;
 	public boolean status;
+	public int taskId;
+	
+	Logger logger = Logger.getLogger(this.getClass().toString());
 
 	public PollingTask(){
 
@@ -35,6 +52,9 @@ public class PollingTask implements Runnable {
 		this.status = true;
 	}
 
+	public PollingTask(int taskId){
+		this.taskId = taskId;
+	}
 	
 	public void finalize() throws Throwable {
 
@@ -49,7 +69,57 @@ public class PollingTask implements Runnable {
 		{
 			
 		}
+		
+		System.out.println(taskId);
 
+	}
+	
+	public int polling(Flow flow,IOFSwitch sw, FloodlightContext cntx)
+	{
+		Set<OFStatsRequestFlags> flagset = new HashSet<OFStatsRequestFlags>();
+		flagset.add(OFStatsRequestFlags.REQ_MORE);
+		if(flow == null)
+			{
+			logger.info("flow.match is null");
+			return 1;
+			}
+		if(sw == null) logger.info("sw == null");
+		OFFlowStatsRequest pkt = sw.getOFFactory().buildFlowStatsRequest()
+				.setMatch(flow.match)
+				.setTableId(TableId.ALL)
+				.setOutPort(OFPort.ANY)
+				.setOutGroup(OFGroup.ANY)
+//				.setFlags(flagset)
+				.build();
+		
+//		ArrayList<OFFlowStatsReply> reply = (ArrayList<OFFlowStatsReply>) sw.writeStatsRequest(pkt);
+		ListenableFuture<?> future = sw.writeStatsRequest(pkt);
+		List<OFStatsReply> values = null;
+		
+		try {
+			values = (List<OFStatsReply>) future.get();
+		} catch (InterruptedException | ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		logger.info("pollingWorker send success!");
+		logger.info(values.get(0).getStatsType().toString());
+		logger.info(((OFStatsReply)values.get(0)).getType().toString());
+		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
+		
+		SwitchMap.getInstance().update(flow.match,sw.getId(), 
+				(
+				Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationSec()) + 
+				(Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationNsec())/1000000000)
+				)
+				, 
+				((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getByteCount().getValue());
+		
+//		logger.info(String.valueOf(reply.size()));
+//		logger.info(reply.get(0).getStatsType().toString());
+		
+		return 0;
 	}
 
 	/**
@@ -59,5 +129,24 @@ public class PollingTask implements Runnable {
 	public int update(OFStatsReply msg){
 		return 0;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		// TODO Auto-generated method stub
+		PollingTask task = (PollingTask)obj;
+		if(this.match.equals(task.match) 
+				&&this.swId.equals(task.swId)
+				)
+//		if(this.match == task.match 
+//				&&this.swId == task.swId
+//				)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	
+	
 
 }

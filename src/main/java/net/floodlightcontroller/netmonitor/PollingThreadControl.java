@@ -1,12 +1,14 @@
 package net.floodlightcontroller.netmonitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +26,8 @@ public class PollingThreadControl {
 	static PollingThreadControl pollingThreadControl = null;
 
 	private FloodlightContext cntx;
-	private Map<Long,List<Runnable>> scheduledMap;
+	private Map<Long,List<Runnable>> scheduledMap = new HashMap<Long,List<Runnable>>();
+	private Map<Runnable,ScheduledFuture<?>> taskmap = new HashMap<Runnable,ScheduledFuture<?>>();
 	private ScheduledExecutorService e = (ScheduledExecutorService) Executors.newScheduledThreadPool(10);
 
 	public PollingThreadControl(){
@@ -53,7 +56,8 @@ public class PollingThreadControl {
 			if(this.scheduledMap.containsKey(Long.valueOf(period)) == false) 
 				this.scheduledMap.put(Long.valueOf(period), new ArrayList<Runnable>());
 			this.scheduledMap.get(Long.valueOf(period)).add((Runnable)task);
-			e.scheduleAtFixedRate(task, 0, period, TimeUnit.MICROSECONDS);
+			ScheduledFuture<?> schedule = e.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
+			taskmap.put(task, schedule);
 		}
 		return 0;
 	}
@@ -118,7 +122,7 @@ public class PollingThreadControl {
 	 * @param task
 	 */
 	public int rmTask(Runnable task){
-		
+		this.taskmap.get(task).cancel(true);
 		this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
 		
 		return 0;
@@ -130,8 +134,40 @@ public class PollingThreadControl {
 	 * @param period
 	 */
 	public int rmTask(Runnable task, long period){
+		this.taskmap.get(task).cancel(true);
 		this.scheduledMap.get(Long.valueOf(period)).remove(task);
+		
 		return 0;
+	}
+	
+	public Runnable getTask(Runnable task)
+	{
+		List list;
+		list = this.scheduledMap.get(containsTask(task));
+		
+		
+		Iterator it = list.iterator();
+		while(it.hasNext())
+		{
+			PollingTask tmp = (PollingTask) it.next();
+			if(tmp.equals(task)) return tmp;
+		}
+		return null;
+	}
+	
+	public static void main(String[] args)
+	{
+		PollingThreadControl ctrl = PollingThreadControl.getInstance();
+		PollingTask t1 = new PollingTask(1001);
+		PollingTask t2 = new PollingTask(888);
+		
+		ctrl.addTask(t1, 1000);
+		ctrl.rmTask(t1);
+		
+		
+		
+//		ctrl.taskmap.get(t1).cancel(true);
+		
 	}
 
 }

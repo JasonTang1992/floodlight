@@ -44,9 +44,9 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 	
 	PollingWroker pollingworker;
 //	private final IThreadPoolService scheduler = new ThreadPool();
-    private final ScheduledExecutorService scheduler =
-    	       Executors.newScheduledThreadPool(1);
-
+//    private final ScheduledExecutorService scheduler =
+//    	       Executors.newScheduledThreadPool(1);
+	private PollingThreadControl ctrl;
 	
 	@Override
 	public String getName() {
@@ -174,7 +174,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		floodlightProvider.addOFMessageListener(OFType.FLOW_MOD, this);
 		floodlightProvider.addOFMessageListener(OFType.STATS_REPLY, this);
 		floodlightProvider.addOFMessageListener(OFType.STATS_REQUEST, this);
-		scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
+		ctrl = PollingThreadControl.getInstance();
 	
 	}
 
