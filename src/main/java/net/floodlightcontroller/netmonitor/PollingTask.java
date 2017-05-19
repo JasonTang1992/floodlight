@@ -65,13 +65,10 @@ public class PollingTask implements Runnable {
 	}
 
 	public void run(){
-		if(this.status == false) 
-		{
-			
-		}
-		
-		System.out.println(taskId);
-
+		polling(SwitchMap.getInstance().getSwitch(swId).getFlow(match),
+				SwitchMap.getInstance().getSwitch(swId).sw,
+				this.cntx);
+		System.out.println(SwitchMap.getInstance().getSwitch(swId).getFlow(match).toString());
 	}
 	
 	public int polling(Flow flow,IOFSwitch sw, FloodlightContext cntx)

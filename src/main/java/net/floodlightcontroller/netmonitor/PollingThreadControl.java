@@ -91,10 +91,8 @@ public class PollingThreadControl {
 		else
 		{
 			if(taskKey == newperiod) return 1;
-			this.scheduledMap.get(Long.valueOf(taskKey)).remove(task);
-			if(this.scheduledMap.containsKey(Long.valueOf(newperiod)) == false) 
-				this.scheduledMap.put(Long.valueOf(newperiod), new ArrayList<Runnable>());
-			this.scheduledMap.get(Long.valueOf(newperiod)).add((Runnable)task);
+			this.rmTask(task);
+			this.addTask(task,newperiod);
 		}
 		return 0;
 	}
@@ -109,7 +107,7 @@ public class PollingThreadControl {
 		if(containsTask(task) != oldperiod) return 0;
 		else
 		{
-			this.scheduledMap.get(Long.valueOf(oldperiod)).remove(task);
+			this.rmTask(task);
 			if(this.scheduledMap.containsKey(Long.valueOf(newperiod)) == false) 
 				this.scheduledMap.put(Long.valueOf(newperiod), new ArrayList<Runnable>());
 			this.scheduledMap.get(Long.valueOf(newperiod)).add((Runnable)task);
@@ -123,6 +121,7 @@ public class PollingThreadControl {
 	 */
 	public int rmTask(Runnable task){
 		this.taskmap.get(task).cancel(true);
+		this.taskmap.remove(task);
 		this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
 		
 		return 0;
@@ -135,6 +134,7 @@ public class PollingThreadControl {
 	 */
 	public int rmTask(Runnable task, long period){
 		this.taskmap.get(task).cancel(true);
+		this.taskmap.remove(task);
 		this.scheduledMap.get(Long.valueOf(period)).remove(task);
 		
 		return 0;

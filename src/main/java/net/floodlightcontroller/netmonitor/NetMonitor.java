@@ -79,20 +79,10 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		{
 		case PACKET_IN:
 			logger.info("PACKET_IN message");
-//			if(!tmp.contains(((OFPacketIn)msg).getMatch()))
-//			{
-//				tmp.addFlow(((OFPacketIn)msg).getMatch());
-//			}
 			Flow flow = new Flow();
 			flow.match = ((OFPacketIn)msg).getMatch();
 			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
 			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
-			
-//			ScheduledExecutorService e = scheduler.getScheduledExecutor();
-//			e.scheduleAtFixedRate(new PollingWroker(), 1, 5, TimeUnit.SECONDS);
-//			pollingworker = new PollingWroker();
-//			pollingworker.run();
-//			e.execute(pollingworker);
 			
 			OFFlowAdd pkt = sw.getOFFactory().buildFlowAdd()
 					.setMatch(sw.getOFFactory().buildMatchV3()
@@ -109,9 +99,8 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
 			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFPacketIn)msg).getMatch());
 			
-//			ScheduledExecutorService e = scheduler.getScheduledExecutor();
-//			scheduler.scheduleAtFixedRate(pollingworker, 1, 5, TimeUnit.SECONDS);
-
+			PollingThreadControl.getInstance().addTask(new PollingTask(cntx,sw.getId(),((OFPacketIn)msg).getMatch()), 1000);
+			
 			break;
 		case FLOW_REMOVED:
 			logger.info("FLOW_REMOVED message");
@@ -121,6 +110,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			logger.info(log4v);
 			
 			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
+			PollingThreadControl.getInstance().rmTask(new PollingTask(cntx,sw.getId(),((OFFlowRemoved)msg).getMatch()));
 			break;
 		case FLOW_MOD:
 			logger.info("FLOW_MOD message");
