@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import ch.qos.logback.classic.Logger;
 import net.floodlightcontroller.core.FloodlightContext;
 
 /**
@@ -120,9 +121,12 @@ public class PollingThreadControl {
 	 * @param task
 	 */
 	public int rmTask(Runnable task){
-		this.taskmap.get(task).cancel(true);
-		this.taskmap.remove(task);
+		if(taskmap.containsKey(task)){
+			this.taskmap.get(task).cancel(true);
+			this.taskmap.remove(task);
+		}
 		this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
+		System.out.println("remove " + task.toString());
 		
 		return 0;
 	}
@@ -144,8 +148,6 @@ public class PollingThreadControl {
 	{
 		List list;
 		list = this.scheduledMap.get(containsTask(task));
-		
-		
 		Iterator it = list.iterator();
 		while(it.hasNext())
 		{
@@ -163,9 +165,6 @@ public class PollingThreadControl {
 		
 		ctrl.addTask(t1, 1000);
 		ctrl.rmTask(t1);
-		
-		
-		
 //		ctrl.taskmap.get(t1).cancel(true);
 		
 	}

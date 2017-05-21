@@ -42,7 +42,6 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 	IFloodlightProviderService floodlightProvider;
 	Logger logger;
 	
-	PollingWroker pollingworker;
 //	private final IThreadPoolService scheduler = new ThreadPool();
 //    private final ScheduledExecutorService scheduler =
 //    	       Executors.newScheduledThreadPool(1);
@@ -89,8 +88,8 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 //							.setMasked(MatchField.IPV4_DST, Masked.of(IPv4Address.of("8.8.8.8"),IPv4Address.of("255.255.255.255")))
 							.build())
 					.setMatch(((OFPacketIn)msg).getMatch())
-					.setHardTimeout(500)
-					.setIdleTimeout(100)
+					.setHardTimeout(0)
+					.setIdleTimeout(0)
 					.setFlags(flagset)
 					.build();
 			if(sw.write(pkt)) logger.info("send success");
@@ -151,7 +150,6 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		// TODO Auto-generated method stub
 		logger = Logger.getLogger(this.getName());
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
-		pollingworker = new PollingWroker(1000);
 //		final ScheduledFuture<?> workerhandle = 
 //				scheduler.scheduleAtFixedRate(pollingworker, 5, 1, TimeUnit.SECONDS);
 	}

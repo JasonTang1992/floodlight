@@ -81,6 +81,7 @@ public class PollingTask implements Runnable {
 			return 1;
 			}
 		if(sw == null) logger.info("sw == null");
+		logger.info("pollingWorker send waiting!!!");
 		OFFlowStatsRequest pkt = sw.getOFFactory().buildFlowStatsRequest()
 				.setMatch(flow.match)
 				.setTableId(TableId.ALL)
@@ -100,7 +101,7 @@ public class PollingTask implements Runnable {
 			e.printStackTrace();
 		}
 		
-		logger.info("pollingWorker send success!");
+		logger.info("pollingWorker send success!!!");
 		logger.info(values.get(0).getStatsType().toString());
 		logger.info(((OFStatsReply)values.get(0)).getType().toString());
 		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());

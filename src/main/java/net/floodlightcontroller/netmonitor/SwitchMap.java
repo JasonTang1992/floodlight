@@ -2,6 +2,8 @@ package net.floodlightcontroller.netmonitor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.DatapathId;
@@ -10,8 +12,8 @@ import net.floodlightcontroller.core.IOFSwitch;
 
 public class SwitchMap {
 	static SwitchMap map;
-	static Map<Double,Map<Match,Flow>> scheduledmap;
-	Map<DatapathId,Switch> switches = new HashMap<DatapathId,Switch>();
+//	static ConcurrentMap<Double,Map<Match,Flow>> scheduledmap;
+	ConcurrentMap<DatapathId,Switch> switches = new ConcurrentHashMap<DatapathId,Switch>();
 
 	public static SwitchMap getInstance() {
 		// TODO Auto-generated method stub
@@ -27,7 +29,7 @@ public class SwitchMap {
 		return switches.containsKey(id);
 	}
 
-	public void addSwitch(DatapathId id,IOFSwitch sw) {
+	public synchronized void addSwitch(DatapathId id,IOFSwitch sw) {
 		// TODO Auto-generated method stub
 		if(this.contains(id) == false)
 		{
@@ -40,7 +42,7 @@ public class SwitchMap {
 		return this.switches.get(id);
 	}
 	
-	public void update(Match match,DatapathId id,double now,long l)
+	public synchronized void update(Match match,DatapathId id,double now,long l)
 	{
 		this.switches.get(id).update(match, now, l);
 	}

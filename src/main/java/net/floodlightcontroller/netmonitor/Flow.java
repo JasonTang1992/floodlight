@@ -3,6 +3,8 @@ package net.floodlightcontroller.netmonitor;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
 
@@ -14,8 +16,8 @@ public class Flow {
 	
 	double duration;
 	long bytescounter;
-	Map<Double,Double> v = new HashMap<Double,Double>();
-	Map<Double,Double> a = new HashMap<Double,Double>();
+	ConcurrentMap<Double,Double> v = new ConcurrentHashMap<Double,Double>();
+	ConcurrentMap<Double,Double> a = new ConcurrentHashMap<Double,Double>();
 	
 	public Flow()
 	{
