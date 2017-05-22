@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
@@ -33,7 +34,7 @@ public class PollingTask implements Runnable {
 
 	private FloodlightContext cntx;
 	private Match match;
-	private Map<Long,Double> statictis4v;
+	private ConcurrentMap<Long,Double> statictis4v;
 	private DatapathId swId;
 	public Date m_Date;
 	public boolean status;
@@ -106,13 +107,25 @@ public class PollingTask implements Runnable {
 		logger.info(((OFStatsReply)values.get(0)).getType().toString());
 		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
 		
-		SwitchMap.getInstance().update(flow.match,sw.getId(), 
-				(
-				Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationSec()) + 
-				(Double.longBitsToDouble(((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getDurationNsec())/1000000000)
-				)
-				, 
-				((OFFlowStatsEntry)(((OFFlowStatsReply)values).getEntries()).get(0)).getByteCount().getValue());
+		OFFlowStatsEntry entry = ((OFFlowStatsReply)values.get(0)).getEntries().get(0);
+		
+		try
+		{
+			SwitchMap.getInstance().update(flow.match,sw.getId(), 
+					(
+					Double.longBitsToDouble(entry.getDurationSec()) + 
+					(Double.longBitsToDouble(entry.getDurationNsec())/1000000000)
+					)
+					, 
+					entry.getByteCount().getValue());
+			
+		}
+		catch(Exception e)
+		{
+			logger.info("pollingTask get a Exception!!!");
+			e.printStackTrace();
+		}
+		
 		
 //		logger.info(String.valueOf(reply.size()));
 //		logger.info(reply.get(0).getStatsType().toString());

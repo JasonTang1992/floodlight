@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -27,8 +29,8 @@ public class PollingThreadControl {
 	static PollingThreadControl pollingThreadControl = null;
 
 	private FloodlightContext cntx;
-	private Map<Long,List<Runnable>> scheduledMap = new HashMap<Long,List<Runnable>>();
-	private Map<Runnable,ScheduledFuture<?>> taskmap = new HashMap<Runnable,ScheduledFuture<?>>();
+	private ConcurrentMap<Long,List<Runnable>> scheduledMap = new ConcurrentHashMap<Long,List<Runnable>>();
+	private ConcurrentMap<Runnable,ScheduledFuture<?>> taskmap = new ConcurrentHashMap<Runnable,ScheduledFuture<?>>();
 	private ScheduledExecutorService e = (ScheduledExecutorService) Executors.newScheduledThreadPool(10);
 
 	public PollingThreadControl(){
@@ -125,7 +127,8 @@ public class PollingThreadControl {
 			this.taskmap.get(task).cancel(true);
 			this.taskmap.remove(task);
 		}
-		this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
+		if(this.scheduledMap.containsKey(task))
+			this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
 		System.out.println("remove " + task.toString());
 		
 		return 0;

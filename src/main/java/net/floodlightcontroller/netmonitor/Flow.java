@@ -14,8 +14,8 @@ public class Flow {
 	
 	Match match;
 	
-	double duration;
-	long bytescounter;
+	double duration = 0;
+	long bytescounter = 0;
 	ConcurrentMap<Double,Double> v = new ConcurrentHashMap<Double,Double>();
 	ConcurrentMap<Double,Double> a = new ConcurrentHashMap<Double,Double>();
 	
@@ -27,6 +27,8 @@ public class Flow {
 	public Flow(Match match)
 	{
 		this.match = match;
+		v.putIfAbsent(Double.valueOf(0), Double.valueOf(0));
+		a.putIfAbsent(Double.valueOf(0), Double.valueOf(0));
 	}
 	
 	public void update(double now,long l)
@@ -51,9 +53,6 @@ public class Flow {
 		double v;
 		int time;
 		Map<Double,Double> tmp;
-		
-
-		
 		return this.v.toString();
 	}
 	
