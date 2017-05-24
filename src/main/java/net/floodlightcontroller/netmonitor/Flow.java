@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Logger;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -20,6 +21,8 @@ public class Flow {
 	long bytescounter;
 	ConcurrentMap<Double,Double> v = new ConcurrentHashMap<Double,Double>();
 	ConcurrentMap<Double,Double> a = new ConcurrentHashMap<Double,Double>();
+	
+	Logger logger = Logger.getLogger(this.getClass().getName());
 	
 	public Flow()
 	{
@@ -63,4 +66,19 @@ public class Flow {
 	{
 		return this.a.toString();
 	}
+
+	@Override
+	public String toString() {
+		Iterator it = this.v.entrySet().iterator();
+		String rs = new String();
+		while(it.hasNext()){
+			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
+			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString();
+//			logger.info("TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString());
+		}
+		
+		return rs;
+	}
+	
+	
 }

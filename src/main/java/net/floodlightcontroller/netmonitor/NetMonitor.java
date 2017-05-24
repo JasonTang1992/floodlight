@@ -104,7 +104,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		case FLOW_REMOVED:
 			logger.info("FLOW_REMOVED message");
 			String log4v;
-			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).getv().toString();
+			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).toString();
 			
 			logger.info(log4v);
 			
