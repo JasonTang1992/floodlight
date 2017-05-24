@@ -1,7 +1,10 @@
 package net.floodlightcontroller.netmonitor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -12,6 +15,7 @@ import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
 
 import com.google.common.collect.Multiset.Entry;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 public class Flow {
 	
@@ -19,8 +23,8 @@ public class Flow {
 	
 	double duration = 0;
 	long bytescounter = 0;
-	ConcurrentMap<Double,Double> v = new ConcurrentHashMap<Double,Double>();
-	ConcurrentMap<Double,Double> a = new ConcurrentHashMap<Double,Double>();
+	Map<Double,Double> v = new LinkedHashMap<Double,Double>();
+	Map<Double,Double> a = new LinkedHashMap<Double,Double>();
 	
 	Logger logger = Logger.getLogger(this.getClass().getName());
 	
@@ -36,7 +40,7 @@ public class Flow {
 		a.putIfAbsent(Double.valueOf(0), Double.valueOf(0));
 	}
 	
-	public void update(double now,long l)
+	public synchronized void update(double now,long l)
 	{
 		double v,a;
 		v=a=0;
@@ -69,10 +73,10 @@ public class Flow {
 	@Override
 	public String toString() {
 		Iterator it = this.v.entrySet().iterator();
-		String rs = new String();
+		String rs = new String("Speed Table");
 		while(it.hasNext()){
 			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
-			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString();
+			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + entry.getValue().toString();
 //			logger.info("TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString());
 		}
 		

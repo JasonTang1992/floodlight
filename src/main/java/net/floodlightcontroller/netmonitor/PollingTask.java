@@ -113,8 +113,8 @@ public class PollingTask implements Runnable {
 		{
 			SwitchMap.getInstance().update(flow.match,sw.getId(), 
 					(
-					Double.longBitsToDouble(entry.getDurationSec()) + 
-					(Double.longBitsToDouble(entry.getDurationNsec())/1000000000)
+					Double.valueOf(entry.getDurationSec()) + 
+					(Double.valueOf(entry.getDurationNsec())/1000000000)
 					)
 					, 
 					entry.getByteCount().getValue());
