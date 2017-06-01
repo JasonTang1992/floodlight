@@ -76,7 +76,7 @@ public class Flow {
 		String rs = new String("Speed Table");
 		while(it.hasNext()){
 			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
-			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + entry.getValue().toString();
+			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + Double.valueOf(entry.getValue().doubleValue()/125000).toString()+"Mbps";
 //			logger.info("TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString());
 		}
 		

@@ -1,7 +1,12 @@
 package net.floodlightcontroller.netmonitor;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +30,9 @@ import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.Masked;
+import org.python.modules.time.Time;
 
+import javafx.scene.chart.PieChart.Data;
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFMessageListener;
@@ -41,6 +48,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 
 	IFloodlightProviderService floodlightProvider;
 	Logger logger;
+	String start_time;
 	
 //	private final IThreadPoolService scheduler = new ThreadPool();
 //    private final ScheduledExecutorService scheduler =
@@ -77,7 +85,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		switch(msg.getType())
 		{
 		case PACKET_IN:
-			logger.info("PACKET_IN message");
+//			logger.info("PACKET_IN message");
 			Flow flow = new Flow();
 			flow.match = ((OFPacketIn)msg).getMatch();
 			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
@@ -89,7 +97,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 							.build())
 					.setMatch(((OFPacketIn)msg).getMatch())
 					.setHardTimeout(0)
-					.setIdleTimeout(0)
+					.setIdleTimeout(10)
 					.setFlags(flagset)
 					.build();
 			if(sw.write(pkt)) logger.info("send success");
@@ -105,14 +113,46 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			logger.info("FLOW_REMOVED message");
 			String log4v;
 			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).toString();
+			File file = new File("/tmp/floodlight-log/"+start_time+"/"+String.valueOf(Calendar.getInstance().getTimeInMillis())+"-"+String.valueOf(((OFFlowRemoved)msg).getMatch().hashCode()));
 			
-			logger.info(log4v);
+			try
+			{
+				if(!file.exists())
+				{
+					file.getParentFile().mkdirs();
+				}
+				file.createNewFile();
+				logger.info(file.getPath());
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+			
+			try
+			{
+				FileOutputStream in = new FileOutputStream(file);
+				try
+				{
+					in.write(log4v.getBytes());
+					in.close();
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+//			logger.info(log4v);
 			
 			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
 			PollingThreadControl.getInstance().rmTask(new PollingTask(cntx,sw.getId(),((OFFlowRemoved)msg).getMatch()));
 			break;
 		case FLOW_MOD:
-			logger.info("FLOW_MOD message");
+//			logger.info("FLOW_MOD message");
 			break;
 		case STATS_REQUEST:
 			logger.info("STATS_REQUEST message");
@@ -163,7 +203,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		floodlightProvider.addOFMessageListener(OFType.STATS_REPLY, this);
 		floodlightProvider.addOFMessageListener(OFType.STATS_REQUEST, this);
 		ctrl = PollingThreadControl.getInstance();
-	
+		start_time = String.valueOf(Calendar.getInstance().getTimeInMillis());
 	}
 
 }
