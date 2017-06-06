@@ -240,7 +240,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 return Command.CONTINUE;
             case FORWARD_OR_FLOOD:
             case FORWARD:
-                doForwardFlow(sw, pi, decision, cntx, false);
+//                doForwardFlow(sw, pi, decision, cntx, false);
+                doForwardFlow(sw, pi, decision, cntx, true); // request flow_removed message modified by Jason Tang
                 return Command.CONTINUE;
             case MULTICAST:
                 // treat as broadcast

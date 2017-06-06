@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
+import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.OFStatsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsRequestFlags;
 import org.projectfloodlight.openflow.protocol.match.Match;
@@ -78,13 +79,16 @@ public class PollingTask implements Runnable {
 		flagset.add(OFStatsRequestFlags.REQ_MORE);
 		if(flow == null)
 			{
-			logger.info("flow.match is null");
-			return 1;
+//				logger.info("flow.match is null");
+				return -1;
 			}
 		if(sw == null) logger.info("sw == null");
 //		logger.info("pollingWorker send waiting!!!");
+		Match match = sw.getOFFactory().buildMatchV3()
+				.setOxmList(((OFMatchV3)flow.match).getOxmList())
+				.build();
 		OFFlowStatsRequest pkt = sw.getOFFactory().buildFlowStatsRequest()
-				.setMatch(flow.match)
+				.setMatch(match)
 				.setTableId(TableId.ALL)
 				.setOutPort(OFPort.ANY)
 				.setOutGroup(OFGroup.ANY)
@@ -101,23 +105,35 @@ public class PollingTask implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		if(values == null)
+		{
+			logger.info("values is null");
+			return 1;
+		}
 		
 //		logger.info("pollingWorker send success!!!");
 //		logger.info(values.get(0).getStatsType().toString());
 //		logger.info(((OFStatsReply)values.get(0)).getType().toString());
-//		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
+		logger.info(((OFFlowStatsReply)values.get(0)).getEntries().toString());
+		logger.info(String.valueOf(((OFFlowStatsReply)values.get(0)).getEntries().size()));
+		logger.info(String.valueOf(values.size()));
 		
 		OFFlowStatsEntry entry = ((OFFlowStatsReply)values.get(0)).getEntries().get(0);
 		
+		if(entry == null)
+		{
+			logger.info("entry is null");
+			return 1;
+		}
 		try
 		{
-			SwitchMap.getInstance().update(flow.match,sw.getId(), 
-					(
-					Double.valueOf(entry.getDurationSec()) + 
-					(Double.valueOf(entry.getDurationNsec())/1000000000)
-					)
-					, 
-					entry.getByteCount().getValue());
+//			SwitchMap.getInstance().update(flow.match,sw.getId(), 
+//					(
+//					Double.valueOf(entry.getDurationSec()) + 
+//					(Double.valueOf(entry.getDurationNsec())/1000000000)
+//					)
+//					, 
+//					entry.getByteCount().getValue());
 			
 		}
 		catch(Exception e)

@@ -19,13 +19,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
+import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.OFFlowModCommand;
 import org.projectfloodlight.openflow.protocol.OFFlowModFlags;
 import org.projectfloodlight.openflow.protocol.OFFlowRemoved;
+import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFPacketIn;
 import org.projectfloodlight.openflow.protocol.OFStatsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsType;
 import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.OFVersion;
+import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.IPv4Address;
@@ -86,73 +91,91 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		{
 		case PACKET_IN:
 //			logger.info("PACKET_IN message");
-			Flow flow = new Flow();
-			flow.match = ((OFPacketIn)msg).getMatch();
-			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
-			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
-			
-			OFFlowAdd pkt = sw.getOFFactory().buildFlowAdd()
-					.setMatch(sw.getOFFactory().buildMatchV3()
-//							.setMasked(MatchField.IPV4_DST, Masked.of(IPv4Address.of("8.8.8.8"),IPv4Address.of("255.255.255.255")))
-							.build())
-					.setMatch(((OFPacketIn)msg).getMatch())
-					.setHardTimeout(0)
-					.setIdleTimeout(10)
-					.setFlags(flagset)
-					.build();
-			if(sw.write(pkt)) logger.info("send success");
-			else logger.info("send failed");
-			
-			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
-			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFPacketIn)msg).getMatch());
-			
-			PollingThreadControl.getInstance().addTask(new PollingTask(cntx,sw.getId(),((OFPacketIn)msg).getMatch()), 1000);
-			
 			break;
 		case FLOW_REMOVED:
 			logger.info("FLOW_REMOVED message");
 			String log4v;
+			((OFFlowRemoved)msg).get
+			if(!SwitchMap.getInstance()
+					.getSwitch(sw.getId())
+					.contains(((OFFlowRemoved)msg).getMatch()))
+					{
+						logger.info("Match is missing");
+						break;
+					}
 			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).toString();
-			File file = new File("/tmp/floodlight-log/"+start_time+"/"+String.valueOf(Calendar.getInstance().getTimeInMillis())+"-"+String.valueOf(((OFFlowRemoved)msg).getMatch().hashCode()));
-			
-			try
-			{
-				if(!file.exists())
-				{
-					file.getParentFile().mkdirs();
-				}
-				file.createNewFile();
-				logger.info(file.getPath());
-			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
-			
-			try
-			{
-				FileOutputStream in = new FileOutputStream(file);
-				try
-				{
-					in.write(log4v.getBytes());
-					in.close();
-				}
-				catch(Exception e)
-				{
-					e.printStackTrace();
-				}
-			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
-//			logger.info(log4v);
+//			File file = new File("/tmp/floodlight-log/"+start_time+"/"+String.valueOf(Calendar.getInstance().getTimeInMillis())+"-"+String.valueOf(((OFFlowRemoved)msg).getMatch().hashCode()));
+//			
+//			try
+//			{
+//				if(!file.exists())
+//				{
+//					file.getParentFile().mkdirs();
+//				}
+//				file.createNewFile();
+//				logger.info(file.getPath());
+//			}
+//			catch(Exception e)
+//			{
+//				e.printStackTrace();
+//			}
+//			
+//			try
+//			{
+//				FileOutputStream in = new FileOutputStream(file);
+//				try
+//				{
+//					in.write(log4v.getBytes());
+//					in.close();
+//				}
+//				catch(Exception e)
+//				{
+//					e.printStackTrace();
+//				}
+//			}
+//			catch(Exception e)
+//			{
+//				e.printStackTrace();
+//			}
+			logger.info(log4v);
 			
 			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
 			PollingThreadControl.getInstance().rmTask(new PollingTask(cntx,sw.getId(),((OFFlowRemoved)msg).getMatch()));
 			break;
 		case FLOW_MOD:
-//			logger.info("FLOW_MOD message");
+			if(((OFFlowMod)msg).getVersion() != OFVersion.OF_13) break; 
+			if(((OFFlowMod)msg).getCommand() != OFFlowModCommand.ADD) break; 
+			logger.info("FLOW_MOD message");
+			logger.info(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList().toString());
+			Match match = sw.getOFFactory().buildMatchV3()
+											.setOxmList(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList())
+											.build();
+			Flow flow = new Flow(match);
+//			flow.match = ((OFPacketIn)msg).getMatch();
+//			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
+//			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
+//			
+//			OFFlowAdd pkt = sw.getOFFactory().buildFlowAdd()
+//					.setMatch(sw.getOFFactory().buildMatchV3()
+//							.setMasked(MatchField.IPV4_DST, Masked.of(IPv4Address.of("8.8.8.8"),IPv4Address.of("255.255.255.255")))
+//							.build())
+//					.setMatch(((OFPacketIn)msg).getMatch())
+//					.setHardTimeout(0)
+//					.setIdleTimeout(10)
+//					.setFlags(flagset)
+//					.build();
+//			if(sw.write(pkt)) logger.info("send success");
+//			else logger.info("send failed");
+			
+			if(SwitchMap.getInstance().getSwitch(sw.getId()).contains(((OFFlowMod)msg).getMatch()))
+			{
+				logger.info("Conflict");
+			}
+			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
+			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFFlowMod)msg).getMatch());
+			
+			PollingThreadControl.getInstance().addTask(new PollingTask(cntx,sw.getId(),((OFFlowMod)msg).getMatch()), 1000);
+			
 			break;
 		case STATS_REQUEST:
 			logger.info("STATS_REQUEST message");

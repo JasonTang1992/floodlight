@@ -35,6 +35,11 @@ public class SwitchMap {
 		{
 			this.switches.put(id, new Switch(id,sw));
 		}
+		else if(!this.getSwitch(id).equals(sw))
+		{
+			this.switches.remove(id);
+			this.switches.put(id, new Switch(id,sw));
+		}
 	}
 
 	public Switch getSwitch(DatapathId id) {

@@ -80,7 +80,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
 
     protected static TableId FLOWMOD_DEFAULT_TABLE_ID = TableId.ZERO;
 
-    protected static boolean FLOWMOD_DEFAULT_SET_SEND_FLOW_REM_FLAG = false;
+    protected static boolean FLOWMOD_DEFAULT_SET_SEND_FLOW_REM_FLAG = true;
 
     protected static boolean FLOWMOD_DEFAULT_MATCH_IN_PORT = true;
     protected static boolean FLOWMOD_DEFAULT_MATCH_VLAN = true;
