@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
+import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
@@ -74,6 +75,8 @@ public class Flow {
 	public String toString() {
 		Iterator it = this.v.entrySet().iterator();
 		String rs = new String("Speed Table");
+		rs = rs + "\r\n";
+		rs = rs + ((OFMatchV3)this.match).getOxmList().toString();
 		while(it.hasNext()){
 			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
 			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + Double.valueOf(entry.getValue().doubleValue()/125000).toString()+"Mbps";
@@ -82,6 +85,39 @@ public class Flow {
 		
 		return rs;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((match == null) ? 0 : match.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof Flow))
+			return false;
+		Flow other = (Flow) obj;
+		if (match == null) {
+			if (other.match != null)
+				return false;
+		} else if (!match.equals(other.match))
+			return false;
+		return true;
+	}
+	
+	
 	
 	
 }

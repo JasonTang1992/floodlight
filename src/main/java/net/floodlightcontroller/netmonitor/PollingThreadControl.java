@@ -13,10 +13,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import org.projectfloodlight.openflow.protocol.OFMatchV3;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import ch.qos.logback.classic.Logger;
 import net.floodlightcontroller.core.FloodlightContext;
 
 /**
@@ -32,6 +34,8 @@ public class PollingThreadControl {
 	private ConcurrentMap<Long,List<Runnable>> scheduledMap = new ConcurrentHashMap<Long,List<Runnable>>();
 	private ConcurrentMap<Runnable,ScheduledFuture<?>> taskmap = new ConcurrentHashMap<Runnable,ScheduledFuture<?>>();
 	private ScheduledExecutorService e = (ScheduledExecutorService) Executors.newScheduledThreadPool(10);
+	
+	Logger logger = Logger.getLogger("PollingThreadControl");
 
 	public PollingThreadControl(){
 
@@ -59,6 +63,7 @@ public class PollingThreadControl {
 			if(this.scheduledMap.containsKey(Long.valueOf(period)) == false) 
 				this.scheduledMap.put(Long.valueOf(period), new ArrayList<Runnable>());
 			this.scheduledMap.get(Long.valueOf(period)).add((Runnable)task);
+			logger.info("Adding "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			ScheduledFuture<?> schedule = e.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
 			taskmap.put(task, schedule);
 		}
@@ -124,11 +129,15 @@ public class PollingThreadControl {
 	 */
 	public int rmTask(Runnable task){
 		if(taskmap.containsKey(task)){
+			logger.info("Remove task form taskmap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			this.taskmap.get(task).cancel(true);
 			this.taskmap.remove(task);
 		}
 		if(this.scheduledMap.containsKey(task))
+		{
+			logger.info("Remove task form scheduledMap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
+		}
 		System.out.println("remove " + task.toString());
 		
 		return 0;

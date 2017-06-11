@@ -84,6 +84,7 @@ public class PollingTask implements Runnable {
 			}
 		if(sw == null) logger.info("sw == null");
 //		logger.info("pollingWorker send waiting!!!");
+		logger.info("polling for "+((OFMatchV3)flow.match).getOxmList().toString());
 		Match match = sw.getOFFactory().buildMatchV3()
 				.setOxmList(((OFMatchV3)flow.match).getOxmList())
 				.build();
@@ -157,23 +158,55 @@ public class PollingTask implements Runnable {
 		return 0;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public boolean equals(Object obj) {
-		// TODO Auto-generated method stub
-		PollingTask task = (PollingTask)obj;
-		if(this.match.equals(task.match) 
-				&&this.swId.equals(task.swId)
-				)
-//		if(this.match == task.match 
-//				&&this.swId == task.swId
-//				)
-		{
-			return true;
-		}
-		return false;
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((match == null) ? 0 : match.hashCode());
+		result = prime * result + ((swId == null) ? 0 : swId.hashCode());
+		return result;
 	}
 
-	
-	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof PollingTask))
+			return false;
+		PollingTask other = (PollingTask) obj;
+		if (match == null) {
+			if (other.match != null)
+				return false;
+		} else if (!match.equals(other.match))
+			return false;
+		if (swId == null) {
+			if (other.swId != null)
+				return false;
+		} else if (!swId.equals(other.swId))
+			return false;
+		return true;
+	}
+
+	/**
+	 * @return the match
+	 */
+	public Match getMatch() {
+		return match;
+	}
+
+	/**
+	 * @param match the match to set
+	 */
+	public void setMatch(Match match) {
+		this.match = match;
+	}
 
 }
