@@ -14,6 +14,7 @@ import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
+import org.python.modules.time.Time;
 
 import com.google.common.collect.Multiset.Entry;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
@@ -37,8 +38,9 @@ public class Flow {
 	public Flow(Match match)
 	{
 		this.match = match;
-		v.putIfAbsent(Double.valueOf(0), Double.valueOf(0));
-		a.putIfAbsent(Double.valueOf(0), Double.valueOf(0));
+		this.duration = Time.time();
+		v.putIfAbsent(this.duration, Double.valueOf(0));
+		a.putIfAbsent(this.duration, Double.valueOf(0));
 	}
 	
 	public synchronized void update(double now,long l)

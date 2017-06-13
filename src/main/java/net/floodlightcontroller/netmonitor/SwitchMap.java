@@ -37,8 +37,10 @@ public class SwitchMap {
 		}
 		else if(!this.getSwitch(id).equals(sw))
 		{
+			Switch tmp = new Switch(id,sw);
+			tmp.flows.putAll(this.switches.get(id).flows);
 			this.switches.remove(id);
-			this.switches.put(id, new Switch(id,sw));
+			this.switches.put(id, tmp);
 		}
 	}
 

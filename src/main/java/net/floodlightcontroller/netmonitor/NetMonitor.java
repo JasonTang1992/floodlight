@@ -99,43 +99,11 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 					.getSwitch(sw.getId())
 					.contains(((OFFlowRemoved)msg).getMatch()))
 					{
+						logger.info("Remove task "+((OFMatchV3)((OFFlowRemoved)msg).getMatch()).getOxmList().toString());
 						logger.info("Match is missing");
 						break;
 					}
 			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).toString();
-//			File file = new File("/tmp/floodlight-log/"+start_time+"/"+String.valueOf(Calendar.getInstance().getTimeInMillis())+"-"+String.valueOf(((OFFlowRemoved)msg).getMatch().hashCode()));
-//			
-//			try
-//			{
-//				if(!file.exists())
-//				{
-//					file.getParentFile().mkdirs();
-//				}
-//				file.createNewFile();
-//				logger.info(file.getPath());
-//			}
-//			catch(Exception e)
-//			{
-//				e.printStackTrace();
-//			}
-//			
-//			try
-//			{
-//				FileOutputStream in = new FileOutputStream(file);
-//				try
-//				{
-//					in.write(log4v.getBytes());
-//					in.close();
-//				}
-//				catch(Exception e)
-//				{
-//					e.printStackTrace();
-//				}
-//			}
-//			catch(Exception e)
-//			{
-//				e.printStackTrace();
-//			}
 			logger.info(log4v);
 			
 			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
@@ -150,21 +118,6 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 											.setOxmList(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList())
 											.build();
 			Flow flow = new Flow(match);
-//			flow.match = ((OFPacketIn)msg).getMatch();
-//			Set<OFFlowModFlags> flagset = new HashSet<OFFlowModFlags>();
-//			flagset.add(OFFlowModFlags.SEND_FLOW_REM);
-//			
-//			OFFlowAdd pkt = sw.getOFFactory().buildFlowAdd()
-//					.setMatch(sw.getOFFactory().buildMatchV3()
-//							.setMasked(MatchField.IPV4_DST, Masked.of(IPv4Address.of("8.8.8.8"),IPv4Address.of("255.255.255.255")))
-//							.build())
-//					.setMatch(((OFPacketIn)msg).getMatch())
-//					.setHardTimeout(0)
-//					.setIdleTimeout(10)
-//					.setFlags(flagset)
-//					.build();
-//			if(sw.write(pkt)) logger.info("send success");
-//			else logger.info("send failed");
 			
 			if(SwitchMap.getInstance().getSwitch(sw.getId()).contains(((OFFlowMod)msg).getMatch()))
 			{

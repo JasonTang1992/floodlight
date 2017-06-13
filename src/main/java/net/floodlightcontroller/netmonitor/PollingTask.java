@@ -20,6 +20,7 @@ import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.OFGroup;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TableId;
+import org.python.modules.time.Time;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -79,7 +80,7 @@ public class PollingTask implements Runnable {
 		flagset.add(OFStatsRequestFlags.REQ_MORE);
 		if(flow == null)
 			{
-//				logger.info("flow.match is null");
+				logger.info("Flow missing in PollingTask");
 				return -1;
 			}
 		if(sw == null) logger.info("sw == null");
@@ -119,6 +120,14 @@ public class PollingTask implements Runnable {
 		logger.info(String.valueOf(((OFFlowStatsReply)values.get(0)).getEntries().size()));
 		logger.info(String.valueOf(values.size()));
 		
+		long byteCounter = 0;
+		for(int i = 0;i<((OFFlowStatsReply)values.get(0)).getEntries().size();i++)
+		{
+			byteCounter = byteCounter + ((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount().getValue();
+//			logger.info(String.valueOf(((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount()));
+		}
+		logger.info(String.valueOf(byteCounter));
+		
 		OFFlowStatsEntry entry = ((OFFlowStatsReply)values.get(0)).getEntries().get(0);
 		
 		if(entry == null)
@@ -129,12 +138,18 @@ public class PollingTask implements Runnable {
 		try
 		{
 //			SwitchMap.getInstance().update(flow.match,sw.getId(), 
-//					(
-//					Double.valueOf(entry.getDurationSec()) + 
-//					(Double.valueOf(entry.getDurationNsec())/1000000000)
-//					)
-//					, 
-//					entry.getByteCount().getValue());
+//			(
+//			Double.valueOf(entry.getDurationSec()) + 
+//			(Double.valueOf(entry.getDurationNsec())/1000000000)
+//			)
+//			, 
+//			byteCounter);
+			SwitchMap.getInstance().update(flow.match,sw.getId(), 
+			(
+					Time.time()
+			)
+			, 
+			byteCounter);
 			
 		}
 		catch(Exception e)

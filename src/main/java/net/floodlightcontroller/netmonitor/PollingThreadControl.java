@@ -129,13 +129,13 @@ public class PollingThreadControl {
 	 */
 	public int rmTask(Runnable task){
 		if(taskmap.containsKey(task)){
-			logger.info("Remove task form taskmap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
+			logger.info("Remove task from taskmap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			this.taskmap.get(task).cancel(true);
 			this.taskmap.remove(task);
 		}
 		if(this.scheduledMap.containsKey(task))
 		{
-			logger.info("Remove task form scheduledMap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
+			logger.info("Remove task from scheduledMap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
 		}
 		System.out.println("remove " + task.toString());
