@@ -32,6 +32,10 @@ import net.floodlightcontroller.core.IOFSwitch;
  * @version 1.0
  * @created 09-May-2017 11:00:57 PM
  */
+/**
+ * @author jason
+ *
+ */
 public class PollingTask implements Runnable {
 
 	private FloodlightContext cntx;
@@ -40,7 +44,9 @@ public class PollingTask implements Runnable {
 	private DatapathId swId;
 	public Date m_Date;
 	public boolean status;
-	public int taskId;
+//	public int taskId;
+	private long timeout = 0;
+	private long counter = 0;
 	
 	Logger logger = Logger.getLogger(this.getClass().toString());
 
@@ -53,11 +59,19 @@ public class PollingTask implements Runnable {
 		this.swId = swId;
 		this.match = match;
 		this.status = true;
+		this.timeout = 100;
+	}
+	
+	
+
+	public FloodlightContext getCntx() {
+		return cntx;
 	}
 
-	public PollingTask(int taskId){
-		this.taskId = taskId;
+	public void setCntx(FloodlightContext cntx) {
+		this.cntx = cntx;
 	}
+
 	
 	public void finalize() throws Throwable {
 
@@ -68,13 +82,19 @@ public class PollingTask implements Runnable {
 	}
 
 	public void run(){
-		polling(SwitchMap.getInstance().getSwitch(swId).getFlow(match),
-				SwitchMap.getInstance().getSwitch(swId).sw,
-				this.cntx);
-//		System.out.println(SwitchMap.getInstance().getSwitch(swId).getFlow(match).toString());
+		if(counter<timeout)
+		{
+			counter = counter + 1;
+		}else
+		{
+			polling(SwitchMap.getInstance().getSwitch(swId).getFlow(match),
+					SwitchMap.getInstance().getSwitch(swId).sw,
+					this.cntx);
+			counter = 0;
+		}
 	}
 	
-	public int polling(Flow flow,IOFSwitch sw, FloodlightContext cntx)
+	public synchronized int polling(Flow flow,IOFSwitch sw, FloodlightContext cntx)
 	{
 		Set<OFStatsRequestFlags> flagset = new HashSet<OFStatsRequestFlags>();
 		flagset.add(OFStatsRequestFlags.REQ_MORE);
@@ -123,8 +143,9 @@ public class PollingTask implements Runnable {
 		long byteCounter = 0;
 		for(int i = 0;i<((OFFlowStatsReply)values.get(0)).getEntries().size();i++)
 		{
-			byteCounter = byteCounter + ((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount().getValue();
-//			logger.info(String.valueOf(((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount()));
+//			byteCounter = byteCounter + ((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount().getValue();
+			if(byteCounter < ((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount().getValue())
+				byteCounter = ((OFFlowStatsReply)values.get(0)).getEntries().get(i).getByteCount().getValue();
 		}
 		logger.info(String.valueOf(byteCounter));
 		
@@ -157,11 +178,6 @@ public class PollingTask implements Runnable {
 			logger.info("pollingTask get a Exception!!!");
 			e.printStackTrace();
 		}
-		
-		
-//		logger.info(String.valueOf(reply.size()));
-//		logger.info(reply.get(0).getStatsType().toString());
-		
 		return 0;
 	}
 
@@ -223,5 +239,23 @@ public class PollingTask implements Runnable {
 	public void setMatch(Match match) {
 		this.match = match;
 	}
+
+	public DatapathId getSwId() {
+		return swId;
+	}
+
+	public void setSwId(DatapathId swId) {
+		this.swId = swId;
+	}
+
+	public long getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+	
+	
 
 }

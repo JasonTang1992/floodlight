@@ -34,7 +34,7 @@ public class Switch {
 		// TODO Auto-generated method stub
 		if(this.contains(match) == false)
 		{
-			flows.put(match, new Flow(match));
+			flows.put(match, new Flow(match,this.id));
 		}
 	}
 

@@ -112,12 +112,13 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 		case FLOW_MOD:
 			if(((OFFlowMod)msg).getVersion() != OFVersion.OF_13) break; 
 			if(((OFFlowMod)msg).getCommand() != OFFlowModCommand.ADD) break; 
+			OFMatchV3 match = (OFMatchV3)((OFFlowMod)msg).getMatch();
+			
+			if(match.getOxmList().equals(match.getOxmList().EMPTY)) break; 
+
 			logger.info("FLOW_MOD message");
 			logger.info(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList().toString());
-			Match match = sw.getOFFactory().buildMatchV3()
-											.setOxmList(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList())
-											.build();
-			Flow flow = new Flow(match);
+			Flow flow = new Flow(match,sw.getId());
 			
 			if(SwitchMap.getInstance().getSwitch(sw.getId()).contains(((OFFlowMod)msg).getMatch()))
 			{

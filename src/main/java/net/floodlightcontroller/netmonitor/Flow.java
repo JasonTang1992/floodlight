@@ -14,6 +14,7 @@ import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.python.modules.time.Time;
 
 import com.google.common.collect.Multiset.Entry;
@@ -22,6 +23,7 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 public class Flow {
 	
 	Match match;
+	DatapathId swId;
 	
 	double duration = 0;
 	long bytescounter = 0;
@@ -35,9 +37,10 @@ public class Flow {
 		
 	}
 	
-	public Flow(Match match)
+	public Flow(Match match,DatapathId id)
 	{
 		this.match = match;
+		this.swId = id;
 		this.duration = Time.time();
 		v.putIfAbsent(this.duration, Double.valueOf(0));
 		a.putIfAbsent(this.duration, Double.valueOf(0));
@@ -45,32 +48,31 @@ public class Flow {
 	
 	public synchronized void update(double now,long l)
 	{
-		double v,a;
-		v=a=0;
+//		double v,a;
+//		v=a=0;
+//		
+//		v = (l-this.bytescounter)/(now-this.duration);
+//		a = (v-this.v.get(Double.valueOf(this.duration)).doubleValue())/(now-this.duration);
+//		
+//		this.v.put(Double.valueOf(now), Double.valueOf(v));
+//		this.a.put(Double.valueOf(now), Double.valueOf(a));
 		
-		v = (l-this.bytescounter)/(now-this.duration);
-		a = (v-this.v.get(Double.valueOf(this.duration)).doubleValue())/(now-this.duration);
-		
-		this.v.put(Double.valueOf(now), Double.valueOf(v));
-		this.a.put(Double.valueOf(now), Double.valueOf(a));
+		AlgorithmCluster ag = AlgorithmCluster.getInstance();
+		ag.PollingAlogrithm(swId, match, now, l);
 		
 		this.duration = now;
 		this.bytescounter = l;
 	}
 	
 
-	public String getv()
+	public Map<Double,Double> getv()
 	{
-		String str = null;
-		double v;
-		int time;
-		Map<Double,Double> tmp;
-		return this.v.toString();
+		return this.v;
 	}
 	
-	public String geta()
+	public Map<Double,Double> geta()
 	{
-		return this.a.toString();
+		return this.a;
 	}
 
 	@Override

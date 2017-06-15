@@ -1,5 +1,6 @@
 package net.floodlightcontroller.netmonitor;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -16,9 +18,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.projectfloodlight.openflow.protocol.OFMatchV3;
+import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.types.DatapathId;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import io.netty.util.internal.ConcurrentSet;
 import net.floodlightcontroller.core.FloodlightContext;
 
 /**
@@ -31,7 +36,9 @@ public class PollingThreadControl {
 	static PollingThreadControl pollingThreadControl = null;
 
 	private FloodlightContext cntx;
-	private ConcurrentMap<Long,List<Runnable>> scheduledMap = new ConcurrentHashMap<Long,List<Runnable>>();
+//	private ConcurrentMap<Long,List<Runnable>> scheduledMap = new ConcurrentHashMap<Long,List<Runnable>>();
+	private ConcurrentMap<Entry<DatapathId,Match>,Runnable> scheduledMap = new ConcurrentHashMap<Entry<DatapathId,Match>,Runnable>();
+//	private CopyOnWriteArrayList<Runnable> scheduledMap = new CopyOnWriteArrayList<Runnable>();
 	private ConcurrentMap<Runnable,ScheduledFuture<?>> taskmap = new ConcurrentHashMap<Runnable,ScheduledFuture<?>>();
 	private ScheduledExecutorService e = (ScheduledExecutorService) Executors.newScheduledThreadPool(10);
 	
@@ -57,32 +64,34 @@ public class PollingThreadControl {
 	 * @param period
 	 */
 	public int addTask(Runnable task, long period){
-		if(containsTask(task) != 0) return 0;
+		this.cntx = ((PollingTask)task).getCntx();
+		PollingTask pollingTask = (PollingTask)task;
+		Entry<DatapathId,Match> cookie = new SimpleEntry<DatapathId,Match>(pollingTask.getSwId(),pollingTask.getMatch());
+		if(containsTask(pollingTask.getSwId(),pollingTask.getMatch()) != null) return 0;
 		else
 		{
-			if(this.scheduledMap.containsKey(Long.valueOf(period)) == false) 
-				this.scheduledMap.put(Long.valueOf(period), new ArrayList<Runnable>());
-			this.scheduledMap.get(Long.valueOf(period)).add((Runnable)task);
-			logger.info("Adding "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
-			ScheduledFuture<?> schedule = e.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
+//			if(this.scheduledMap.containsKey(Long.valueOf(period)) == false) 
+//				this.scheduledMap.put(Long.valueOf(period), new ArrayList<Runnable>());
+//			this.scheduledMap.get(Long.valueOf(period)).add((Runnable)task);
+			this.scheduledMap.put(cookie, task);
+			logger.info("Adding "+((OFMatchV3)(pollingTask).getMatch()).getOxmList().toString());
+			pollingTask.setTimeout(period/10);
+			ScheduledFuture<?> schedule = e.scheduleAtFixedRate(task, 0, 10, TimeUnit.MILLISECONDS);
 			taskmap.put(task, schedule);
 		}
 		return 0;
 	}
+	
+	
 
 	/**
 	 * 
 	 * @param task
 	 */
-	public long containsTask(Runnable task){
-		Iterator it = this.scheduledMap.entrySet().iterator();
-		while(it.hasNext())
-		{
-			Entry<Long,List<Runnable>> pair = (Entry<Long,List<Runnable>>)it.next();
-			List<Runnable> list = pair.getValue();
-			if(list.contains(task)) return pair.getKey().longValue();
-		}
-		return 0;
+	public Runnable containsTask(DatapathId id,Match match){
+		Entry<DatapathId,Match> tmp = new SimpleEntry(id,match);
+		if(this.scheduledMap.containsKey(tmp)) return this.scheduledMap.get(tmp);
+		return null;
 	}
 
 	/**
@@ -90,94 +99,60 @@ public class PollingThreadControl {
 	 * @param task
 	 * @param newperiod
 	 */
-	public int modifyTask(Runnable task, long newperiod){
-		long taskKey = 0;
-		
-		taskKey = containsTask(task);
-		
-		if(taskKey == 0) return 0;
-		else
-		{
-			if(taskKey == newperiod) return 1;
-			this.rmTask(task);
-			this.addTask(task,newperiod);
-		}
+	public int modifyTask(DatapathId id,Match match, long newperiod){
+		PollingTask task = (PollingTask)this.containsTask(id, match);
+		if(task==null) return -1;
+		task.setTimeout(newperiod/10);		
 		return 0;
 	}
 
-	/**
-	 * 
-	 * @param task
-	 * @param newperiod
-	 * @param oldperiod
-	 */
-	public int modifyTask(Runnable task, long newperiod, long oldperiod){
-		if(containsTask(task) != oldperiod) return 0;
-		else
-		{
-			this.rmTask(task);
-			if(this.scheduledMap.containsKey(Long.valueOf(newperiod)) == false) 
-				this.scheduledMap.put(Long.valueOf(newperiod), new ArrayList<Runnable>());
-			this.scheduledMap.get(Long.valueOf(newperiod)).add((Runnable)task);
-		}
-		return 0;
+	public long getTaskPeriod(DatapathId id,Match match)
+	{
+		PollingTask task = (PollingTask)this.containsTask(id, match);
+		if(task==null) return -1;	
+		return task.getTimeout();			
 	}
-
 	/**
 	 * 
 	 * @param task
 	 */
 	public int rmTask(Runnable task){
+		PollingTask pollingTask = (PollingTask)task;
+		Entry<DatapathId,Match> cookie = new SimpleEntry<DatapathId,Match>(pollingTask.getSwId(),pollingTask.getMatch());
+		
 		if(taskmap.containsKey(task)){
 			logger.info("Remove task from taskmap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
 			this.taskmap.get(task).cancel(true);
 			this.taskmap.remove(task);
 		}
-		if(this.scheduledMap.containsKey(task))
+		if(this.scheduledMap.containsKey(cookie))
 		{
 			logger.info("Remove task from scheduledMap "+((OFMatchV3)((PollingTask)task).getMatch()).getOxmList().toString());
-			this.scheduledMap.get(Long.valueOf(containsTask(task))).remove(task);
+			this.scheduledMap.remove(cookie);
 		}
 		System.out.println("remove " + task.toString());
 		
 		return 0;
 	}
-
-	/**
-	 * 
-	 * @param task
-	 * @param period
-	 */
-	public int rmTask(Runnable task, long period){
-		this.taskmap.get(task).cancel(true);
-		this.taskmap.remove(task);
-		this.scheduledMap.get(Long.valueOf(period)).remove(task);
-		
-		return 0;
-	}
 	
-	public Runnable getTask(Runnable task)
+	public Runnable getTask(DatapathId id,Match match)
 	{
-		List list;
-		list = this.scheduledMap.get(containsTask(task));
-		Iterator it = list.iterator();
-		while(it.hasNext())
-		{
-			PollingTask tmp = (PollingTask) it.next();
-			if(tmp.equals(task)) return tmp;
-		}
-		return null;
+		Entry<DatapathId,Match> cookie = new SimpleEntry<DatapathId,Match>(id,match);
+
+		return this.scheduledMap.get(cookie);
 	}
 	
+	public FloodlightContext getCntx() {
+		return cntx;
+	}
+
+	public void setCntx(FloodlightContext cntx) {
+		this.cntx = cntx;
+	}
+
 	public static void main(String[] args)
 	{
 		PollingThreadControl ctrl = PollingThreadControl.getInstance();
-		PollingTask t1 = new PollingTask(1001);
-		PollingTask t2 = new PollingTask(888);
-		
-		ctrl.addTask(t1, 1000);
-		ctrl.rmTask(t1);
-//		ctrl.taskmap.get(t1).cancel(true);
 		
 	}
 
