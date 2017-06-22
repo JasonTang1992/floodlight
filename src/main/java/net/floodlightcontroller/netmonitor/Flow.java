@@ -59,6 +59,7 @@ public class Flow {
 		
 		AlgorithmCluster ag = AlgorithmCluster.getInstance();
 		ag.PollingAlogrithm(swId, match, now, l);
+//		ag.PaylessAlogrithm(swId, match, now, l);
 		
 		this.duration = now;
 		this.bytescounter = l;

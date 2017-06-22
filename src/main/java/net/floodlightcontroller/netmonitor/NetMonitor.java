@@ -94,6 +94,11 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			break;
 		case FLOW_REMOVED:
 			logger.info("FLOW_REMOVED message");
+			SwitchMap.getInstance().update(((OFFlowRemoved)msg).getMatch(),
+					sw.getId(), 
+					Time.time(), 
+					((OFFlowRemoved)msg).getByteCount().getValue());
+			
 			String log4v;
 			if(!SwitchMap.getInstance()
 					.getSwitch(sw.getId())
@@ -105,6 +110,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 					}
 			log4v = SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(((OFFlowRemoved)msg).getMatch()).toString();
 			logger.info(log4v);
+
 			
 			SwitchMap.getInstance().getSwitch(sw.getId()).rmFlow(((OFFlowRemoved)msg).getMatch());
 			PollingThreadControl.getInstance().rmTask(new PollingTask(cntx,sw.getId(),((OFFlowRemoved)msg).getMatch()));
@@ -127,7 +133,7 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
 			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFFlowMod)msg).getMatch());
 			
-			PollingThreadControl.getInstance().addTask(new PollingTask(cntx,sw.getId(),((OFFlowMod)msg).getMatch()), 1000);
+//			PollingThreadControl.getInstance().addTask(new PollingTask(cntx,sw.getId(),((OFFlowMod)msg).getMatch()), 1000);
 			
 			break;
 		case STATS_REQUEST:
