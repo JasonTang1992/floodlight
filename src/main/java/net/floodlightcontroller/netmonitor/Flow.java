@@ -30,6 +30,8 @@ public class Flow {
 	Map<Double,Double> v = new LinkedHashMap<Double,Double>();
 	Map<Double,Double> a = new LinkedHashMap<Double,Double>();
 	
+	AlgorithmCluster.Algorithms Algorithm = AlgorithmCluster.Algorithms.PAYLESS;
+	
 	Logger logger = Logger.getLogger(this.getClass().getName());
 	
 	public Flow()
@@ -48,18 +50,27 @@ public class Flow {
 	
 	public synchronized void update(double now,long l)
 	{
-//		double v,a;
-//		v=a=0;
-//		
-//		v = (l-this.bytescounter)/(now-this.duration);
-//		a = (v-this.v.get(Double.valueOf(this.duration)).doubleValue())/(now-this.duration);
-//		
-//		this.v.put(Double.valueOf(now), Double.valueOf(v));
-//		this.a.put(Double.valueOf(now), Double.valueOf(a));
 		
 		AlgorithmCluster ag = AlgorithmCluster.getInstance();
-		ag.PollingAlogrithm(swId, match, now, l);
-//		ag.PaylessAlogrithm(swId, match, now, l);
+		switch(Algorithm)
+		{
+		case PAYLESS:
+			ag.PaylessAlogrithm(swId, match, now, l);
+			break;
+		case FLOWSENSE:
+			ag.FlowsneseAlogrithm(swId, match, now, l);
+			break;
+		case POLLING:
+			ag.PollingAlogrithm(swId, match, now, l);
+			break;
+		case MYSELF:
+			ag.MyAlogrithm(swId, match, now, l);
+			break;
+		default:
+			logger.info("algorithm miss matching");
+		}
+		
+//		
 		
 		this.duration = now;
 		this.bytescounter = l;
@@ -85,7 +96,6 @@ public class Flow {
 		while(it.hasNext()){
 			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
 			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + Double.valueOf(entry.getValue().doubleValue()/125000).toString()+"Mbps";
-//			logger.info("TimeStamp: " + entry.getKey().toString() + " Speed: " + entry.getValue().toString());
 		}
 		
 		return rs;

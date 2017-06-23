@@ -38,6 +38,8 @@ public class AlgorithmCluster {
 	private int payless_polling_period = 500;
 	private int TIME_FUZZ = 1;
 	
+	static public enum Algorithms{FLOWSENSE,PAYLESS,POLLING,MYSELF;}
+	
 	static public AlgorithmCluster getInstance()
 	{
 		if(self == null) self = new AlgorithmCluster();
@@ -60,7 +62,25 @@ public class AlgorithmCluster {
 		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
 		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
 		
-//		pool.modifyTask(id, match, POLLING_PERIOD);
+		pool.modifyTask(id, match, POLLING_PERIOD);
+	}
+	
+	public void FlowsneseAlogrithm(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount;
+		v=a=0;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		
+		
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
 	}
 	
 	public void PaylessAlogrithm(DatapathId id ,Match match,double now,long l)
@@ -113,7 +133,7 @@ public class AlgorithmCluster {
 				}
 				
 				
-				logger.info(latestutil.toString());
+//				logger.info(latestutil.toString());
 			}
 		}
 		double utils = v/allutils;
@@ -160,7 +180,7 @@ public class AlgorithmCluster {
 		
 	}
 	
-
+	
 	/**
 	 * @param args
 	 */
