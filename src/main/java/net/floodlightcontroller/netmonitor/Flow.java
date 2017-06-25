@@ -30,7 +30,7 @@ public class Flow {
 	Map<Double,Double> v = new LinkedHashMap<Double,Double>();
 	Map<Double,Double> a = new LinkedHashMap<Double,Double>();
 	
-	AlgorithmCluster.Algorithms Algorithm = AlgorithmCluster.Algorithms.PAYLESS;
+	AlgorithmCluster.Algorithms Algorithm = AlgorithmCluster.Algorithms.MYSELF;
 	
 	Logger logger = Logger.getLogger(this.getClass().getName());
 	

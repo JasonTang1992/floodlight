@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import java.math.*;
+
 import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
@@ -38,7 +40,14 @@ public class AlgorithmCluster {
 	private int payless_polling_period = 500;
 	private int TIME_FUZZ = 1;
 	
-	static public enum Algorithms{FLOWSENSE,PAYLESS,POLLING,MYSELF;}
+	//FAM
+	private double FLOW_A_UP = 0;
+	private double FLOW_A_DOWN = 0;
+	private double FLOW_V_UP = 0;
+	private double FLOW_V_DOWN = 0;
+	private double FLOW_C = 0;
+	
+	static public enum Algorithms{FLOWSENSE,PAYLESS,POLLING,MYSELF,FAM;}
 	
 	static public AlgorithmCluster getInstance()
 	{
@@ -177,6 +186,32 @@ public class AlgorithmCluster {
 	
 	public void MyAlogrithm(DatapathId id ,Match match,double now,long l)
 	{
+		double v,a,lasttime,lastbytecount,c;
+		int period = 0;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		
+		
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(Math.abs(flow.geta().get(lasttime).doubleValue()-a) >= 0.5)
+		{
+			period = (int) (c/v - c*Math.abs(a));
+		}else
+		{
+			period = (int) (c/v);
+		}
+		if(period < 500) period = 500;
+		
+		pool.modifyTask(id, match, period);
 		
 	}
 	
