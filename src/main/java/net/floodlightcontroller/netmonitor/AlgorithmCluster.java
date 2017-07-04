@@ -202,14 +202,16 @@ public class AlgorithmCluster {
 		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
 		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
 		
-		if(Math.abs(flow.geta().get(lasttime).doubleValue()-a) >= 0.5)
+		if((a/v) < 0.3)
 		{
-			period = (int) (c/v - c*Math.abs(a));
+			period = 2000;
+		}else if((a/v) >= 0.3 && (a/v) < 0.6)
+		{
+			period = 1000;
 		}else
 		{
-			period = (int) (c/v);
+			period = 500;
 		}
-		if(period < 500) period = 500;
 		
 		pool.modifyTask(id, match, period);
 		
