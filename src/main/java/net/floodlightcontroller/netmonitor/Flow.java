@@ -1,5 +1,6 @@
 package net.floodlightcontroller.netmonitor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,6 +30,13 @@ public class Flow {
 	long bytescounter = 0;
 	Map<Double,Double> v = new LinkedHashMap<Double,Double>();
 	Map<Double,Double> a = new LinkedHashMap<Double,Double>();
+	
+	List<Long> win = new ArrayList<Long>();
+	List<Double> dwin = new ArrayList<Double>();
+	int ws = 3;
+	double slidewin = 0;
+	
+	int period = 500;
 	
 	AlgorithmCluster.Algorithms Algorithm = AlgorithmCluster.Algorithms.MYSELF;
 	
@@ -64,7 +72,13 @@ public class Flow {
 			ag.PollingAlogrithm(swId, match, now, l);
 			break;
 		case MYSELF:
-			ag.MyAlogrithm(swId, match, now, l);
+			ag.RAdaRate(swId, match, now, l);
+			break;
+		case Elastic:
+			ag.Elastic(swId, match, now, l);
+			break;
+		case SWT:
+			ag.SWT(swId, match, now, l);
 			break;
 		default:
 			logger.info("algorithm miss matching");

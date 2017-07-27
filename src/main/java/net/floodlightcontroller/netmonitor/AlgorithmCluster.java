@@ -4,6 +4,7 @@
 package net.floodlightcontroller.netmonitor;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
@@ -47,12 +48,20 @@ public class AlgorithmCluster {
 	private double FLOW_V_DOWN = 0;
 	private double FLOW_C = 0;
 	
-	static public enum Algorithms{FLOWSENSE,PAYLESS,POLLING,MYSELF,FAM;}
+	static public enum Algorithms{FLOWSENSE,PAYLESS,POLLING,MYSELF,FAM,Elastic, SWT;}
 	
 	static public AlgorithmCluster getInstance()
 	{
 		if(self == null) self = new AlgorithmCluster();
 		return self;
+	}
+	
+	
+	public double Normaldistribution(){
+		double u1,u2;
+		u1 = Math.random();
+		u2 = Math.random();
+		return Math.sqrt(-2*Math.log(u1)*Math.cos(2*Math.PI*u2));
 	}
 	
 	public void PollingAlogrithm(DatapathId id ,Match match,double now,long l)
@@ -187,13 +196,14 @@ public class AlgorithmCluster {
 	public void MyAlogrithm(DatapathId id ,Match match,double now,long l)
 	{
 		double v,a,lasttime,lastbytecount,c;
-		int period = 0;
+		int period = 500;
 		v=a=0;
 		c = 10000;
 		
 		Flow flow = swmap.getSwitch(id).getFlow(match);
 		lasttime = flow.duration;
 		lastbytecount = flow.bytescounter;
+		period = flow.period;
 		
 		
 		v = (l-lastbytecount)/(now-lasttime);
@@ -202,21 +212,415 @@ public class AlgorithmCluster {
 		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
 		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
 		
-		if((a/v) < 0.3)
+//		if((a/v) < 0.2)
+//		{
+//			period = 2000;
+//		}else if((a/v) >= 0.2 && (a/v) < 0.6)
+//		{
+//			period = 1000;
+//		}else
+//		{
+//			period = 500;
+//		}
+		
+		if((a/v) > 0.2)
 		{
-			period = 2000;
-		}else if((a/v) >= 0.3 && (a/v) < 0.6)
-		{
-			period = 1000;
+			period = ((period/2)>500)?(period/2):500;
 		}else
 		{
-			period = 500;
+			period = ((period*3)<5000)?(period*3):5000;
+		}
+
+		
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void Elastic(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,slidewin;
+		int period = 500;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		slidewin =(a/((v+now-lasttime)/2));
+		
+		if(Math.abs(slidewin-flow.slidewin) > 0.2)
+		{
+			period = ((period/2)>500)?(period/2):500;
+		}else
+		{
+			period = ((period*3)<5000)?(period*3):5000;
+		}
+		flow.slidewin = slidewin;
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void SWT(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		List<Long> win;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.win;
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		win.add(Long.valueOf(var));
+		Iterator<Long> it =  win.iterator();
+		mean = 0;
+		while(it.hasNext()){
+			mean = mean + (it.next().doubleValue()/win.size());
+		}
+		
+	    double rval = 0;  
+	    for (int i = 0; i < win.size(); i++) {  
+	        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+	    }  
+	    rval /= win.size();  
+	    rval = Math.sqrt(rval);  
+
+		
+		if(var > mean + 2*rval)
+		{
+			period = ((period/2)>500)?(period/2):500;
+			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+		}else
+		{
+			period = ((period*2)<5000)?(period*3):5000;
+			flow.ws = flow.ws + 1;
+		}
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(win.size() > flow.ws){
+			win.remove(0);
+		}
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void MyAlogrithm2(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c;
+		int period = 500;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		
+		v = (l-lastbytecount)/(now-lasttime);
+		a = Math.abs(v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if((a/v)/(Math.exp(-(double)(now-lasttime-500)/500)) > 0.2)
+		{
+			period = ((period/2)>500)?(period/2):500;
+		}else
+		{
+			period = ((period*3)<5000)?(period*3):5000;
 		}
 		
 		pool.modifyTask(id, match, period);
+		flow.period = period;
 		
 	}
+
 	
+	public void MyAlogrithm3(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c;
+		int period = 500;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		
+		v = (l-lastbytecount)/(now-lasttime);
+		a = Math.abs(v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		double factor = 0;
+//		factor = (a/Math.pow(v, 0.999))/(Math.exp(-(double)(now-lasttime-500)/500)) + (1-5*Math.exp(-Math.pow(v/125000, 0.999)));
+		factor = ((a+0.1)/Math.pow(v, 0.999))/(Math.exp(-(double)(now-lasttime-500)/500));
+		logger.info(String.valueOf(factor));
+		if(factor > 0.2)
+		{
+			period = ((period/2)>500)?(period/2):500;
+		}else
+		{
+			logger.info("period"+String.valueOf(period));
+			period = Math.min(period*2,5000);
+		}
+		
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+	}
+	
+	public void MyAlogrithm4(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		List<Long> win;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.win;
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		win.add(Long.valueOf(var));
+		Iterator<Long> it =  win.iterator();
+		mean = 0;
+		while(it.hasNext()){
+			mean = mean + (it.next().doubleValue()/win.size());
+		}
+		
+	    double rval = 0;  
+	    for (int i = 0; i < win.size(); i++) {  
+	        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+	    }  
+	    rval /= win.size();  
+	    rval = Math.sqrt(rval);  
+	    
+	    if(Math.random() > 0.7)
+	    {
+	    	period = 500;
+	    	flow.ws = flow.ws + 1;
+	    }
+	    else if(var > mean + 2*rval)
+		{
+			period = ((period/2)>500)?(period/2):500;
+			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+		}else
+		{
+			period = ((period*2)<5000)?(period*3):5000;
+			flow.ws = flow.ws + 1;
+		}
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(win.size() > flow.ws){
+			win.remove(0);
+		}
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void MyAlogrithm5(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		List<Long> win;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.win;
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		win.add(Long.valueOf(var));
+		Iterator<Long> it =  win.iterator();
+		mean = 0;
+		while(it.hasNext()){
+			mean = mean + (it.next().doubleValue()/win.size());
+		}
+		
+	    double rval = 0;  
+	    for (int i = 0; i < win.size(); i++) {  
+	        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+	    }  
+	    rval /= win.size();  
+	    rval = Math.sqrt(rval);  
+	    
+	    if(Normaldistribution() > 0.7)
+	    {
+	    	period = 500;
+	    	flow.ws = flow.ws + 1;
+	    }
+	    else if(var > mean + 2*rval)
+		{
+			period = ((period/2)>500)?(period/2):500;
+			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+		}else
+		{
+			period = ((period*2)<5000)?(period*3):5000;
+			flow.ws = flow.ws + 1;
+		}
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(win.size() > flow.ws){
+			win.remove(0);
+		}
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void RAdaRate(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		List<Double> win;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.dwin;
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+//		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		win.add(Double.valueOf(v));
+		Iterator<Double> it =  win.iterator();
+		mean = 0;
+		while(it.hasNext()){
+			mean = mean + (it.next().doubleValue()/win.size());
+		}
+		
+	    double rval = 0;  
+	    for (int i = 0; i < win.size(); i++) {  
+	        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+	    }  
+	    rval /= win.size();  
+	    rval = Math.sqrt(rval);  
+	    
+	    if(Normaldistribution() > 0.9)
+	    {
+	    	period = 500;
+	    	flow.ws = flow.ws + 1;
+	    }
+	    else if(rval > 0.1*mean)
+		{
+			period = ((period/2)>500)?(period/2):500;
+			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+		}else
+		{
+			period = ((period*2)<5000)?(period*3):5000;
+			flow.ws = flow.ws + 1;
+		}
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(win.size() > flow.ws){
+			win.remove(0);
+		}
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void AdaRate(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		List<Double> win;
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.dwin;
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+//		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime);
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+	
+		win.add(Double.valueOf(v));
+		Iterator<Double> it =  win.iterator();
+		mean = 0;
+		while(it.hasNext()){
+			mean = mean + (it.next().doubleValue()/win.size());
+		}
+		
+	    double rval = 0;  
+	    for (int i = 0; i < win.size(); i++) {  
+	        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+	    }  
+	    rval /= win.size();  
+	    rval = Math.sqrt(rval);  
+	    
+	    if(rval > 0.1*mean)
+		{
+			period = ((period/2)>500)?(period/2):500;
+			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+		}else
+		{
+			period = ((period*2)<5000)?(period*3):5000;
+			flow.ws = flow.ws + 1;
+		}
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		if(win.size() > flow.ws){
+			win.remove(0);
+		}
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
 	
 	/**
 	 * @param args
