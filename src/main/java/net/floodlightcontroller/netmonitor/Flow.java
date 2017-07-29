@@ -33,6 +33,9 @@ public class Flow {
 	
 	List<Long> win = new ArrayList<Long>();
 	List<Double> dwin = new ArrayList<Double>();
+
+	List<Double> arimalist = new ArrayList<Double>();
+
 	int ws = 3;
 	double slidewin = 0;
 	
@@ -72,7 +75,7 @@ public class Flow {
 			ag.PollingAlogrithm(swId, match, now, l);
 			break;
 		case MYSELF:
-			ag.RAdaRate(swId, match, now, l);
+			ag.ARIMAPeriodic(swId, match, now, l);
 			break;
 		case Elastic:
 			ag.Elastic(swId, match, now, l);

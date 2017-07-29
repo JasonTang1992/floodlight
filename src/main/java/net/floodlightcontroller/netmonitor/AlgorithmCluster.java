@@ -14,6 +14,7 @@ import org.projectfloodlight.openflow.protocol.OFMatchV3;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.math.arima.*;
 
 /**
  * @author jason
@@ -621,7 +622,130 @@ public class AlgorithmCluster {
 		
 	}
 
-	
+	public void ARIMAPeriodic(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+//		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime); // bytes/second
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		for(int i=0;i<((now-lasttime+0.2)/0.5);i++){
+			flow.arimalist.add(v);
+		}
+
+		int predict_num = 0;
+		double byten = 0;
+		logger.info("Waiting for Prediction");
+		while(predict_num < 100 && flow.arimalist.size()>20){
+			logger.info("Prediction Beginning");
+			double[] arimalist = new double[flow.arimalist.size()];
+			for(int i=0;i<flow.arimalist.size();i++){
+				arimalist[i] = flow.arimalist.get(i);
+			}
+			
+			ARIMA arima = new ARIMA(arimalist);
+			int [] model=arima.getARIMAmodel();
+			
+			int vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
+			logger.info("Prediction:the Next Value of Flow Rate:"+String.valueOf(vnext));
+			byten = byten + vnext*0.5;
+			if(byten < 4*1024*1024) //3MB
+			{
+				flow.arimalist.add((double)vnext);
+				predict_num++;
+			}else{
+			break;
+		}
+		}
+		
+		period = (predict_num*500>500)?predict_num*500:500;
+		
+		while(predict_num > 0){
+			flow.arimalist.remove(flow.arimalist.size()-1);
+			predict_num--;
+		}
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
+	public void ARIMASpike(DatapathId id ,Match match,double now,long l)
+	{
+		double v,a,lasttime,lastbytecount,c,mean;
+		int period = 500;
+		long var = 0;
+		
+		v=a=0;
+		c = 10000;
+		
+		Flow flow = swmap.getSwitch(id).getFlow(match);
+		lasttime = flow.duration;
+		lastbytecount = flow.bytescounter;
+		period = flow.period;
+		
+//		var = (long) (l-lastbytecount);
+		v = (l-lastbytecount)/(now-lasttime); // bytes/second
+		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
+		
+		for(int i=0;i<((now-lasttime+0.2)/0.5);i++){
+			flow.arimalist.add(v);
+		}
+
+		int predict_num = 0;
+		double byten = 0;
+		logger.info("Waiting for Prediction");
+		while(predict_num < 100 && flow.arimalist.size()>20){
+			logger.info("Prediction Beginning");
+			double[] arimalist = new double[flow.arimalist.size()];
+			for(int i=0;i<flow.arimalist.size();i++){
+				arimalist[i] = flow.arimalist.get(i);
+			}
+			
+			ARIMA arima = new ARIMA(arimalist);
+			int [] model=arima.getARIMAmodel();
+			
+			int vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
+			logger.info("Prediction:the Next Value of Flow Rate:"+String.valueOf(vnext));
+			byten = byten + vnext*0.5;
+			if(byten < 2*1024*1024) //2MB
+			{
+				flow.arimalist.add((double)vnext);
+				predict_num++;
+			}else{
+			break;
+		}
+		}
+		
+		period = (predict_num*500>500)?predict_num*500:500;
+		
+		while(predict_num > 0){
+			flow.arimalist.remove(flow.arimalist.size()-1);
+			predict_num--;
+		}
+		
+		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
+		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
+		
+		pool.modifyTask(id, match, period);
+		flow.period = period;
+		
+	}
+
 	/**
 	 * @param args
 	 */
