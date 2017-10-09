@@ -254,9 +254,9 @@ public class AlgorithmCluster {
 		v = (l-lastbytecount)/(now-lasttime);
 		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
 		
-		slidewin =(a/((v+now-lasttime)/2));
+		slidewin =(Math.abs(v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/((flow.getv().get(Double.valueOf(lasttime)).doubleValue()+now-lasttime)/2));
 		
-		if(Math.abs(slidewin-flow.slidewin) > 0.2)
+		if(Math.abs(slidewin-flow.slidewin) > 0.1)
 		{
 			period = ((period/2)>500)?(period/2):500;
 		}else
@@ -492,7 +492,7 @@ public class AlgorithmCluster {
 	    }
 	    else if(var > mean + 2*rval)
 		{
-			period = ((period/2)>500)?(period/2):500;
+			period = ((period/2)>1500)?(period/2):1500;
 			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
 		}else
 		{
@@ -543,14 +543,14 @@ public class AlgorithmCluster {
 	    rval /= win.size();  
 	    rval = Math.sqrt(rval);  
 	    
-	    if(Normaldistribution() > 0.9)
+	    if(Normaldistribution() > 0.92)
 	    {
 	    	period = 500;
 	    	flow.ws = flow.ws + 1;
 	    }
 	    else if(rval > 0.1*mean)
 		{
-			period = ((period/2)>500)?(period/2):500;
+			period = ((period/2)>1500)?(period/2):1500;
 			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
 		}else
 		{
@@ -657,7 +657,7 @@ public class AlgorithmCluster {
 			ARIMA arima = new ARIMA(arimalist);
 			int [] model=arima.getARIMAmodel();
 			
-			int vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
+			double vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
 			logger.info("Prediction:the Next Value of Flow Rate:"+String.valueOf(vnext));
 			byten = byten + vnext*0.5;
 			if(byten < 4*1024*1024) //3MB
@@ -669,11 +669,14 @@ public class AlgorithmCluster {
 		}
 		}
 		
-		period = (predict_num*500>500)?predict_num*500:500;
-		
-		while(predict_num > 0){
-			flow.arimalist.remove(flow.arimalist.size()-1);
-			predict_num--;
+		if(flow.arimalist.size()>20){
+			period = (predict_num*500>500)?predict_num*500:500;
+			period = (predict_num*500<5000)?predict_num*500:5000;
+			
+			while(predict_num > 0){
+				flow.arimalist.remove(flow.arimalist.size()-1);
+				predict_num--;
+			}
 		}
 		
 		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
@@ -684,63 +687,124 @@ public class AlgorithmCluster {
 		
 	}
 
-	public void ARIMASpike(DatapathId id ,Match match,double now,long l)
+	public void ARIMARate(DatapathId id ,Match match,double now,long l)
 	{
 		double v,a,lasttime,lastbytecount,c,mean;
 		int period = 500;
 		long var = 0;
-		
+		List<Double> win;
 		v=a=0;
 		c = 10000;
 		
 		Flow flow = swmap.getSwitch(id).getFlow(match);
+		win = flow.dwin;
 		lasttime = flow.duration;
 		lastbytecount = flow.bytescounter;
 		period = flow.period;
 		
 //		var = (long) (l-lastbytecount);
-		v = (l-lastbytecount)/(now-lasttime); // bytes/second
+		v = (l-lastbytecount)/(now-lasttime);
 		a = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(now-lasttime);
 		
-		for(int i=0;i<((now-lasttime+0.2)/0.5);i++){
+		// ARIMA Demo	
+		if((now-lasttime+0.2)/0.5==1){
 			flow.arimalist.add(v);
+		}
+		else{
+			double rate = (v-flow.getv().get(Double.valueOf(lasttime)).doubleValue())/(double)((now-lasttime+0.2)/0.5);
+			for(int i=0;i<((now-lasttime+0.2)/0.5);i++){
+				flow.arimalist.add((flow.getv().get(Double.valueOf(lasttime)).doubleValue()+rate*(i+1)));
+			}
 		}
 
 		int predict_num = 0;
 		double byten = 0;
 		logger.info("Waiting for Prediction");
-		while(predict_num < 100 && flow.arimalist.size()>20){
+		
+		if(flow.arimalist.size()>20){
 			logger.info("Prediction Beginning");
-			double[] arimalist = new double[flow.arimalist.size()];
-			for(int i=0;i<flow.arimalist.size();i++){
-				arimalist[i] = flow.arimalist.get(i);
+			int winsize=20;
+			for(int i=0;i<winsize;i++){
+				double[] arimalist = new double[flow.arimalist.size()];
+				for(int j=0;j<flow.arimalist.size();j++){
+					arimalist[j] = flow.arimalist.get(j);
+				}
+				
+				ARIMA arima = new ARIMA(arimalist);
+				int [] model=arima.getARIMAmodel();
+				
+//				int vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
+				double vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
+				flow.arimalist.add((double)vnext);
+			}
+			double arimawin[] = new double[20];
+			String arimawinstr = "";
+			for(int i=0;i<winsize;i++){
+				arimawin[winsize-i-1] = flow.arimalist.get(flow.arimalist.size()-1);
+				flow.arimalist.remove(flow.arimalist.size()-1);
+				arimawinstr = arimawinstr + String.valueOf(arimawin[winsize-i-1])+" ";
+			}
+			logger.info("Prediction:the Next Value of Flow Rate:"+"\r\n"+arimawinstr);	
+			
+			mean = 0;
+			for(int i=0;i<winsize;i++){
+				mean = mean + (arimawin[i]/winsize);
 			}
 			
-			ARIMA arima = new ARIMA(arimalist);
-			int [] model=arima.getARIMAmodel();
-			
-			int vnext = arima.aftDeal(arima.predictValue(model[0], model[1]));
-			logger.info("Prediction:the Next Value of Flow Rate:"+String.valueOf(vnext));
-			byten = byten + vnext*0.5;
-			if(byten < 2*1024*1024) //2MB
+		    double rval = 0;  
+		    for (int i = 0; i < winsize; i++) {  
+		        rval += Math.pow((arimawin[i] - mean), 2);  
+		    }  
+		    rval /= winsize;  
+		    rval = Math.sqrt(rval);  
+		    
+		    if(rval > 0.11*mean)
 			{
-				flow.arimalist.add((double)vnext);
-				predict_num++;
-			}else{
-			break;
+				period = ((period/2)>500)?(period/2):500;
+				flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+			}else if(rval < 0.079*mean)
+			{
+				period = ((period*2)<5000)?(period*3):5000;
+				flow.ws = flow.ws + 1;
+			}
+			
+			
 		}
-		}
-		
-		period = (predict_num*500>500)?predict_num*500:500;
-		
-		while(predict_num > 0){
-			flow.arimalist.remove(flow.arimalist.size()-1);
-			predict_num--;
+		// ARIMA Demo		
+		else{
+			win.add(Double.valueOf(v));
+			Iterator<Double> it =  win.iterator();
+			
+			mean = 0;
+			while(it.hasNext()){
+				mean = mean + (it.next().doubleValue()/win.size());
+			}
+			
+		    double rval = 0;  
+		    for (int i = 0; i < win.size(); i++) {  
+		        rval += Math.pow((win.get(i).doubleValue() - mean), 2);  
+		    }  
+		    rval /= win.size();  
+		    rval = Math.sqrt(rval);  
+		    
+		    if(rval > 0.1*mean)
+			{
+				period = ((period/2)>500)?(period/2):500;
+				flow.ws = (flow.ws/2<3)?flow.ws/2:3;
+			}else
+			{
+				period = ((period*2)<5000)?(period*3):5000;
+				flow.ws = flow.ws + 1;
+			}
+		    
+			
+			if(win.size() > flow.ws){
+				win.remove(0);
+			}
 		}
 		
 		flow.getv().put(Double.valueOf(now), Double.valueOf(v));
 		flow.geta().put(Double.valueOf(now), Double.valueOf(a));
-		
 		pool.modifyTask(id, match, period);
 		flow.period = period;
 		

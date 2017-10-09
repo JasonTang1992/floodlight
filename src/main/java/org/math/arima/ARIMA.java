@@ -39,7 +39,38 @@ public class ARIMA {
 
 		return tempData;
 	}
-/**
+
+	public double[] preDealDifN(int n)
+	{
+		double []tempData=new double[originalData.length-1];
+		//N Difference:N=n
+		if(n==1){
+			for(int i=0;i<originalData.length-1;i++)
+			{
+				tempData[i]=originalData[i+1]-originalData[i];
+			}
+		}else if(n > 1){
+			for(int i=0;i<originalData.length-1;i++)
+			{
+				tempData[i]=originalData[i+1]-originalData[i];
+			}
+			n--;
+			int j = 0;
+			while(n>0){
+				j++;
+				for(int i=0;i<tempData.length-j;i++)
+				{
+					tempData[i]=tempData[i+1]-tempData[i];
+				}
+				n--;
+			}
+		}
+		
+		return tempData;
+
+	}
+	
+	/**
  * ԭʼ���ݱ�׼������Z-Score��һ��
  * @param ����������
  * @return ��һ�����������
@@ -64,6 +95,7 @@ public class ARIMA {
 	public int[] getARIMAmodel()
 	{
 		double[] stdoriginalData=this.preDealDif();//ԭʼ���ݲ�ִ���
+//		double[] stdoriginalData=this.preDealDifN(1);//ԭʼ���ݲ�ִ���
 		
 		int paraType=0;
 		double minAIC=9999999;
@@ -207,10 +239,41 @@ public class ARIMA {
  * @param predictValue Ԥ���ֵ
  * @return ����ֹ����Ԥ��ֵ
  */
-	public int aftDeal(int predictValue)
+	public double aftDeal(double predictValue)
 	{
 		//System.out.println("predictBeforeDiff="+predictValue);
-		return (int)(predictValue+originalData[originalData.length-7]);
+//		return (int)(predictValue+originalData[originalData.length-7]);
+		return (predictValue+originalData[originalData.length-7]);
+	}
+	
+	public long Cnk(long n,long k){
+		long ns,nks,ks;
+		ns=nks=ks=1;
+		for(long i=1;i<=n;i++){
+			ns=ns*i;
+		}
+		for(long i=1;i<=k;i++){
+			ks=ks*i;
+		}
+		for(long i=1;i<=n-k;i++){
+			nks=nks*i;
+		}
+		return ns/(nks*ks);
+		
+	}
+	public double aftDealN(double predictValue,int n)
+	{
+		//System.out.println("predictBeforeDiff="+predictValue);
+		if(n==1){
+			return (predictValue+originalData[originalData.length-1]);
+		}else if(n>1){
+			double sum=0;
+			for(int i=1;i<=n;i++){
+				sum=(sum+Math.pow(-1,n-i)*(Cnk(n,i))*originalData[originalData.length-1-i]);
+			}
+			return (Math.pow(-1, n)*(predictValue-sum));
+		}
+		return -1;
 	}
 /**
  * ����һ��Ԥ��
@@ -218,9 +281,10 @@ public class ARIMA {
  * @param q ARMAģ�͵�MA�Ľ���
  * @return Ԥ��ֵ
  */
-	public int predictValue(int p,int q)
+	public double predictValue(int p,int q)
 	{
-		int predict=0;
+//		int predict=0;
+		double predict=0;
 		double[] stdoriginalData=this.preDealDif();
 		int n=stdoriginalData.length;
 		double temp=0,temp2=0;
@@ -244,7 +308,8 @@ public class ARIMA {
 				}
 				err[0]=random.nextGaussian()*Math.sqrt(maPara[0]);
 			}
-			predict=(int)(temp); //����Ԥ��
+//			predict=(int)(temp); //����Ԥ��
+			predict=(temp); //����Ԥ��
 		}
 		else if(q==0)
 		{
@@ -257,7 +322,8 @@ public class ARIMA {
 					temp+=arPara[i]*stdoriginalData[k-i-1];
 				}
 			}
-			predict=(int)(temp);
+//			predict=(int)(temp);
+			predict=(temp);
 		}
 		else
 		{
@@ -288,7 +354,8 @@ public class ARIMA {
 				err[0]=random.nextGaussian()*Math.sqrt(maPara[0]);
 			}
 			
-			predict=(int)(temp2+temp);
+//			predict=(int)(temp2+temp);
+			predict=(temp2+temp);
 			
 		}
 	
@@ -341,6 +408,10 @@ public class ARIMA {
 		}
 		
 		return maPara;
+	}
+	
+	public static void main(String[] argv){
+		
 	}
 
 }

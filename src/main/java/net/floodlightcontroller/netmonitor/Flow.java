@@ -35,11 +35,12 @@ public class Flow {
 	List<Double> dwin = new ArrayList<Double>();
 
 	List<Double> arimalist = new ArrayList<Double>();
+	
 
 	int ws = 3;
 	double slidewin = 0;
 	
-	int period = 500;
+	int period = 5000;
 	
 	AlgorithmCluster.Algorithms Algorithm = AlgorithmCluster.Algorithms.MYSELF;
 	
@@ -75,7 +76,7 @@ public class Flow {
 			ag.PollingAlogrithm(swId, match, now, l);
 			break;
 		case MYSELF:
-			ag.ARIMAPeriodic(swId, match, now, l);
+			ag.ARIMARate(swId, match, now, l);
 			break;
 		case Elastic:
 			ag.Elastic(swId, match, now, l);
@@ -114,6 +115,10 @@ public class Flow {
 			Map.Entry<Double, Double> entry = (Map.Entry<Double, Double>)it.next();
 			rs = rs + "\r\n" + "TimeStamp: " + entry.getKey().doubleValue() + " Speed: " + Double.valueOf(entry.getValue().doubleValue()/125000).toString()+"Mbps";
 		}
+//		it = this.arimalist.iterator();
+//		while(it.hasNext()){
+//			rs = rs + "\r\n" + " Speed: " + Double.valueOf(((Double) it.next()).doubleValue()/125000).toString()+"Mbps";
+//		}	
 		
 		return rs;
 	}
