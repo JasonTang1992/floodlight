@@ -76,7 +76,7 @@ public class Flow {
 			ag.PollingAlogrithm(swId, match, now, l);
 			break;
 		case MYSELF:
-			ag.ARIMARate(swId, match, now, l);
+			ag.RAdaRate(swId, match, now, l);
 			break;
 		case Elastic:
 			ag.Elastic(swId, match, now, l);

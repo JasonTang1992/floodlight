@@ -550,7 +550,7 @@ public class AlgorithmCluster {
 	    }
 	    else if(rval > 0.1*mean)
 		{
-			period = ((period/2)>1500)?(period/2):1500;
+			period = ((period/2)>500)?(period/2):500;
 			flow.ws = (flow.ws/2<3)?flow.ws/2:3;
 		}else
 		{
