@@ -118,14 +118,15 @@ public class PollingTask implements Runnable {
 				.build();
 		
 //		ArrayList<OFFlowStatsReply> reply = (ArrayList<OFFlowStatsReply>) sw.writeStatsRequest(pkt);
-		ListenableFuture<?> future = sw.writeStatsRequest(pkt);
-		List<OFStatsReply> values = null;
+		ListenableFuture<List<OFFlowStatsReply>> future = sw.writeStatsRequest(pkt);
+		List<OFFlowStatsReply> values = null;
 		
 		try {
-			values = (List<OFStatsReply>) future.get();
+			values = future.get();
 		} catch (InterruptedException | ExecutionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			future.notify();
 		}
 		if(values == null)
 		{

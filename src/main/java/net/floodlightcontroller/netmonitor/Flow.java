@@ -16,6 +16,7 @@ import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.TableId;
 import org.python.modules.time.Time;
 
 import com.google.common.collect.Multiset.Entry;
@@ -25,6 +26,8 @@ public class Flow {
 	
 	Match match;
 	DatapathId swId;
+	TableId tableId;
+	int priority;
 	
 	double duration = 0;
 	long bytescounter = 0;
@@ -59,11 +62,29 @@ public class Flow {
 		v.putIfAbsent(this.duration, Double.valueOf(0));
 		a.putIfAbsent(this.duration, Double.valueOf(0));
 	}
+
+	public Flow(Match match,DatapathId swid,TableId tableId,int priority)
+	{
+		this.match = match;
+		this.swId = swid;
+		this.tableId = tableId;
+		this.priority = priority;
+		this.duration = Time.time();
+		v.putIfAbsent(this.duration, Double.valueOf(0));
+		a.putIfAbsent(this.duration, Double.valueOf(0));
+	}
+	
 	
 	public synchronized void update(double now,long l)
 	{
 		
 		AlgorithmCluster ag = AlgorithmCluster.getInstance();
+		FlowStatStore fstore = new FlowStatStore();
+		
+		fstore.EventFlowReply(String.valueOf(fstore.getWildcard(swId.toString(), tableId.toString(),match.toString(), String.valueOf(priority))), 
+				String.valueOf((long)now*100), 
+				String.valueOf(l));
+		
 		switch(Algorithm)
 		{
 		case PAYLESS:

@@ -125,14 +125,21 @@ public class NetMonitor implements IFloodlightModule, IOFMessageListener {
 
 			logger.info("FLOW_MOD message");
 			logger.info(((OFMatchV3)((OFFlowMod)msg).getMatch()).getOxmList().toString());
-			Flow flow = new Flow(match,sw.getId());
+			Flow flow = new Flow(match,sw.getId(),((OFFlowMod)msg).getTableId(),((OFFlowMod)msg).getPriority());
+			System.out.println("Flow Info:\r\n"+sw.getId().toString()+((OFFlowMod)msg).getTableId().toString()+ match.toString()+ 
+					String.valueOf(((OFFlowMod)msg).getPriority()));
+			
+			FlowStatStore fstore = new FlowStatStore();
+			fstore.EventPacketIn(sw.getId().toString(), ((OFFlowMod)msg).getTableId().toString(), match.toString(), 
+					String.valueOf(((OFFlowMod)msg).getPriority()));
 			
 			if(SwitchMap.getInstance().getSwitch(sw.getId()).contains(((OFFlowMod)msg).getMatch()))
 			{
 				logger.info("Conflict");
 			}
 			SwitchMap.getInstance().addSwitch(sw.getId(),sw);
-			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFFlowMod)msg).getMatch());
+//			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFFlowMod)msg).getMatch());
+			SwitchMap.getInstance().getSwitch(sw.getId()).addFlow(((OFFlowMod)msg).getMatch(),((OFFlowMod)msg).getTableId(),((OFFlowMod)msg).getPriority());
 			
 			if(SwitchMap.getInstance().getSwitch(sw.getId()).getFlow(match).Algorithm == AlgorithmCluster.Algorithms.FLOWSENSE)
 				break;

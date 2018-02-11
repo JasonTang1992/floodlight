@@ -140,7 +140,6 @@
 		</resources>
 	</build>
 	<dependencies>
-		<!-- https://mvnrepository.com/artifact/gov.nist.math/jama -->
 		<dependency>
 		    <groupId>gov.nist.math</groupId>
     		<artifactId>jama</artifactId>

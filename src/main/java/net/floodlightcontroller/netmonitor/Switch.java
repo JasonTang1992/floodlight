@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.TableId;
 
 import net.floodlightcontroller.core.IOFSwitch;
 
@@ -38,6 +39,15 @@ public class Switch {
 		}
 	}
 
+	public void addFlow(Match match,TableId tableId,int priority) {
+		// TODO Auto-generated method stub
+		if(this.contains(match) == false)
+		{
+			flows.put(match, new Flow(match,this.id,tableId,priority));
+		}
+	}
+
+	
 	public void rmFlow(Match match) {
 		// TODO Auto-generated method stub
 		this.flows.remove(match);
