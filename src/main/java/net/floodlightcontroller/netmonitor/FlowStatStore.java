@@ -1,3 +1,5 @@
+package net.floodlightcontroller.netmonitor;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -8,12 +10,12 @@ import java.util.Map;
 
 public class FlowStatStore {
 	private final static String Name = "This is a testcase for JDBC";
-	private final static String Database = "localhost/TrafficMeasurement";
+	private final static String Database = "sh-cdb-hc6wjza2.sql.tencentcdb.com:63657/trafficmeasurement";
 	private final static String TableFlowEntry = "flowentry";
 	private final static String TableFlowRate = "FlowRate";
 	private final static String TableFlowStatistic = "flowstatistic";
 	private final static String User = "root";
-	private final static String Password = "pl,okm123";
+	private final static String Password = "tang_132";
 
 	/**
 	 * @param DatapathID
