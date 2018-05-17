@@ -1,4 +1,4 @@
-package floodlightcontroller.flowsmonitor;
+package net.floodlightcontroller.flowsmonitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +40,6 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 
 public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFSwitchListener {
 	private String Name = "floodlightcontroller.flowsmonitor.FlowsMonitor";
-	private GlobalViewer globalView;
-	private MeasureTasks measureTasks;
 	private IFloodlightProviderService floodlightProvider;
 	@Override
 	public String getName() {
@@ -62,12 +60,12 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 
 	@Override
 	public void switchAdded(DatapathId switchId) {
-		this.globalView.addSwitches(switchId);
+//		this.globalView.addSwitches(switchId);
 	}
 
 	@Override
 	public void switchRemoved(DatapathId switchId) {
-		this.globalView.removeSwitches(switchId);
+//		this.globalView.removeSwitches(switchId);
 	}
 
 	@Override
@@ -152,12 +150,6 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 					dstPort = matchField.get(MatchField.SCTP_DST).getPort();
 					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
 					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
-				}
-				if(this.measureTasks.contains(scrIP, scrPort, dstIP, dstPort, Protocol, sw.getId().getLong()) == null) {
-					
-				}else {
-					MeasureConfig config = this.measureTasks.getMeasureConfig(scrIP, scrPort, dstIP, dstPort, Protocol, sw.getId().getLong());
-					
 				}
 			}
 			else if(flowMod.getCommand().compareTo(OFFlowModCommand.MODIFY) == 0) {
