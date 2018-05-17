@@ -1,0 +1,14 @@
+@startuml
+autonumber 1
+Monitor -> Scheduler : New Flow Event
+Scheduler -> Storage : New Flow Message
+Storage -> Storage : Extract FlowEntry MatchField and \nTableID and dpid from Message.
+Storage -> SwitchSet : dpid
+SwitchSet -> Storage : Switch Entry
+Storage -> Switch : getFlowEnrtySet()
+Switch -> Storage : FlowEnrtySet
+Storage -> FlowEnrtySet: addFlowEntry(tableID, matchField)
+FlowEnrtySet -> Storage : Success or Failed(0 or 1)
+Storage -> Storage  : If the flow entry has already existed?\n(Yes=1/No=0)
+Storage -> Scheduler : Response
+@enduml

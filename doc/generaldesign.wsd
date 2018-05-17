@@ -1,0 +1,54 @@
+@startuml
+
+alt PacketIn Event
+
+autonumber 1
+Monitor -> Scheduler: New Flow Event
+Scheduler -> Storage: New Flow Message
+Storage -> Storage  : If the flow entry has already existed?
+Storage -> Scheduler: Response
+
+else Flow Removed Event
+
+autonumber 1
+Monitor -> Scheduler: Flow Removed Event
+Scheduler -> Storage: Flow Message
+Storage -> Storage  : If the flow entry has already existed?
+Storage -> Scheduler: Response
+
+end
+
+alt TaskRequest
+
+autonumber 1
+
+RESTfuler -> Scheduler  : Measurement Request
+Scheduler -> Measurement: Measurement Task
+Measurement -> Measurement: If the Measurement Task has already existed?
+Measurement -> Scheduler: Response
+Scheduler -> RESTfuler: Measurement Reply
+
+else InfoRequest
+
+autonumber 1
+
+RESTfuler -> Scheduler  : Information Request
+Scheduler -> Storage: Information Match
+Storage -> Storage: If the Information has already existed?
+Storage -> Scheduler: Response
+Scheduler -> RESTfuler: Information Reply
+
+end
+
+alt Measure
+
+PollingWorker -> Measurement: polling period
+Measurement -> PollingWorker: target flow entry list
+PollingWorker -> PollingWorker: polling for each flow entry
+PollingWorker -> Measurement: Response
+Measurement -> Storage: flow entry statistics
+Storage -> Measurement: Response
+
+end
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+autonumber 1
+Monitor -> Scheduler: Flow Removed Event
+Scheduler -> Storage: Flow Message
+Storage -> Storage : Extract FlowEntry MatchField, TableID,\n byteCounter, duringTime and dpid from Message.
+Storage -> SwitchSet : dpid
+Storage -> Switch : getFlowEnrtySet()
+Switch -> Storage : FlowEnrtySet
+Storage -> FlowEnrtySet: getFlowEntry(tableID, matchField)
+FlowEnrtySet -> Storage: FlowEnrty
+Storage -> FlowEnrty: getByteCounter()
+FlowEnrty -> Storage: byteCounter
+Storage -> FlowEnrty: getDuringTime()
+FlowEnrty -> Storage: duringTime
+Storage -> Storage:   rate = diff(byteCounter)/diff(duringTime)
+Storage -> FlowEnrty: addRate(rate,duringTimeNow)
+Storage -> Scheduler: Response
+@enduml

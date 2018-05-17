@@ -1,0 +1,34 @@
+@startuml
+
+class MeasureTasksSet{
+	- measureTasksSet<MeasureTasks,long>
+
+	+ getMeasureTasks(long) : MeasureTasks
+	+ getAllMeasureTasks() : ArrayList<MeasureTasks>
+	+ getAllPeriod() : ArrayList<long>
+	+ addMeasureTasks(long) : int
+	+ rmMeasureTasks(long) : int
+}
+
+class  MeasureTasks{
+	- measureTasks<MeasureTask>
+
+	+ getAllMeasureTask() : ArrayList<MeasureTask>
+	+ addMeasureTask(MeasureTask) : int
+	+ rmMeasureTask(MeasureTask) : int
+}
+
+class MeasureTask{
+	+ flowentry
+	+ method
+}
+
+
+class PollingWorker{
+	- period 
+
+	+ PollingWorker(period) : void
+	+ run() : void
+}
+
+@enduml

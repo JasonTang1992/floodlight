@@ -1,0 +1,58 @@
+@startuml
+
+class Switch{
+	- dpid
+	- flowentrySet
+
+	+ getdpid() : int
+	+ getFlowEnrtySet() : FlowEnrtySet
+}
+
+class SwitchSet{
+	- switchSet
+
+	+ getSwitch(dpid) : Switch
+	+ getAllSwitch()  : ArrayList<Switch>
+	+ addSwitch(dpid) : int
+}
+
+class FlowEnrty{
+	- tableID
+	- matchField
+	- byteCounter
+	- packetCounter
+	- duringTime
+	- rateMap<float, float>
+
+	+ gettableID() : int
+	+ getMatchField() : int
+	+ getByteCounter() : long
+	+ getPacketCounter() : long
+	+ getDuringTime() : float 
+	+ getAllRate() : HashMap<float, float>
+	+ getRate(float) : float
+	+ setByteCounter(long) : void
+	+ setPacketCounter(long) : void
+	+ setDuringTime(float) : void
+	+ addRate(float, float) : void
+}
+
+class FlowEnrtySet{
+	- flowentrySet
+	- FlowMethodMap<FlowEnrty,Method>
+
+	+ getFlowEntry(tableID, matchField) : FlowEnrty
+	+ getMethod(FlowEnrty) : Method
+	+ addFlowEntry(tableID, matchField) : int
+	+ setMethod(FlowEnrty, Method) : int
+}
+
+enum Mehod{
+	AdaRate
+	SW-ARIMA
+	Payless
+	SWT
+	Periodic
+}
+
+@enduml
