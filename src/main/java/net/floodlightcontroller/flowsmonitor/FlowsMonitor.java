@@ -17,6 +17,7 @@ import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFOxmList;
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
 import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
@@ -37,10 +38,14 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.restserver.IRestApiService;
+import net.floodlightcontroller.restserver.RestletRoutable;
 
-public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFSwitchListener {
+public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFSwitchListener, IRestApiService {
 	private String Name = "floodlightcontroller.flowsmonitor.FlowsMonitor";
 	private IFloodlightProviderService floodlightProvider;
+	private SwitchSet switchSet;
+	private IRestApiService restApiService;
 	@Override
 	public String getName() {
 		return Name;
@@ -61,6 +66,7 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 	@Override
 	public void switchAdded(DatapathId switchId) {
 //		this.globalView.addSwitches(switchId);
+		this.switchSet.addSwitch(switchId.getLong());
 	}
 
 	@Override
@@ -102,6 +108,7 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 		// TODO Auto-generated method stub
 		Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
 		l.add(IFloodlightProviderService.class);
+		l.add(IRestApiService.class);
 		return l;
 	}
 
@@ -109,14 +116,14 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 	public void init(FloodlightModuleContext context) throws FloodlightModuleException {
 		// TODO Auto-generated method stub
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
-		
+		restApiService = context.getServiceImpl(IRestApiService.class);
 	}
 
 	@Override
 	public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
 		// TODO Auto-generated method stub
-		Timer timer = new Timer();
-		timer.schedule(new FlowMeasure(), 500);
+//		Timer timer = new Timer();
+//		timer.schedule(new FlowMeasure(), 500);
 		floodlightProvider.addOFMessageListener(OFType.FLOW_MOD, this);
 		floodlightProvider.addOFMessageListener(OFType.FLOW_REMOVED, this);
 	}
@@ -128,29 +135,35 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 		case FLOW_MOD:
 			OFFlowMod flowMod = (OFFlowMod)msg;
 			if(flowMod.getCommand().compareTo(OFFlowModCommand.ADD) == 0) {
-				OFMatchV3 matchField = (OFMatchV3)flowMod.getMatch();
-				OFOxmList oxmList = matchField.getOxmList();
-				IpProtocol proto = matchField.get(MatchField.IP_PROTO);
-				int scrIP = 0,scrPort = 0,dstIP = 0,dstPort = 0,Protocol;
-				Protocol = proto.getIpProtocolNumber();
-				if(Protocol == IpProtocol.UDP.getIpProtocolNumber()) {
-					scrPort = matchField.get(MatchField.UDP_SRC).getPort();
-					dstPort = matchField.get(MatchField.UDP_DST).getPort();
-					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
-					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
-				}
-				else if(Protocol == IpProtocol.TCP.getIpProtocolNumber()) {
-					scrPort = matchField.get(MatchField.TCP_SRC).getPort();
-					dstPort = matchField.get(MatchField.TCP_DST).getPort();
-					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
-					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
-				}
-				else if(Protocol == IpProtocol.SCTP.getIpProtocolNumber()) {
-					scrPort = matchField.get(MatchField.SCTP_SRC).getPort();
-					dstPort = matchField.get(MatchField.SCTP_DST).getPort();
-					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
-					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
-				}
+				Match matchField = flowMod.getMatch();
+				Switch s = this.switchSet.getSwitch(sw.getId().getLong());
+				FlowEntrySet fwset = s.getFlowentrySet();
+				fwset.addFlowEntry(new FlowEntry(matchField,
+						flowMod.getTableId().getLength(),
+						sw.getId().getLong()));
+//				OFMatchV3 matchField = (OFMatchV3)flowMod.getMatch();
+//				OFOxmList oxmList = matchField.getOxmList();
+//				IpProtocol proto = matchField.get(MatchField.IP_PROTO);
+//				int scrIP = 0,scrPort = 0,dstIP = 0,dstPort = 0,Protocol;
+//				Protocol = proto.getIpProtocolNumber();
+//				if(Protocol == IpProtocol.UDP.getIpProtocolNumber()) {
+//					scrPort = matchField.get(MatchField.UDP_SRC).getPort();
+//					dstPort = matchField.get(MatchField.UDP_DST).getPort();
+//					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
+//					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
+//				}
+//				else if(Protocol == IpProtocol.TCP.getIpProtocolNumber()) {
+//					scrPort = matchField.get(MatchField.TCP_SRC).getPort();
+//					dstPort = matchField.get(MatchField.TCP_DST).getPort();
+//					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
+//					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
+//				}
+//				else if(Protocol == IpProtocol.SCTP.getIpProtocolNumber()) {
+//					scrPort = matchField.get(MatchField.SCTP_SRC).getPort();
+//					dstPort = matchField.get(MatchField.SCTP_DST).getPort();
+//					scrIP = matchField.get(MatchField.IPV4_SRC).getInt();
+//					dstIP = matchField.get(MatchField.IPV4_DST).getInt();
+//				}
 			}
 			else if(flowMod.getCommand().compareTo(OFFlowModCommand.MODIFY) == 0) {
 				;
@@ -161,11 +174,35 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 			break;
 		case FLOW_REMOVED:
 			OFFlowRemoved flowRemoved = (OFFlowRemoved)msg;
+			Match matchField = flowRemoved.getMatch();
+			Switch s = this.switchSet.getSwitch(sw.getId().getLong());
+			FlowEntrySet fwset = s.getFlowentrySet();
+			FlowEntry flowentry = fwset.getFlowEntry(matchField);
+			flowentry.addRate(flowRemoved.getDurationSec()+flowRemoved.getDurationNsec()/1000000000.0,
+					(flowRemoved.getByteCount().getValue()-flowentry.getByteCounter())/
+					(flowRemoved.getDurationSec()+flowRemoved.getDurationNsec()/1000000000.0-flowentry.getDuringTime()));
+			flowentry.setByteCounter(flowRemoved.getByteCount().getValue());
+			flowentry.setDuringTime((float) (flowRemoved.getDurationNsec() + flowRemoved.getDurationNsec()/1000000000.0));
+			flowentry.setPacketCounter(flowRemoved.getPacketCount().getValue());
+			System.out.println(flowentry.getMatchfield().toString());
+			System.out.println(flowentry.getRateMap().values().toString());
 			break;
 		default:
 			;
 		}
 		return null;
+	}
+
+	@Override
+	public void addRestletRoutable(RestletRoutable routable) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
