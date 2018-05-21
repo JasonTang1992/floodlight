@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class Switch {
 	private long dpid;
-	private FlowEntrySet flowentrySet;
+	private FlowEntrySet flowentrySet = new FlowEntrySet();
 	
 	public Switch(long dpid) {
 		this.dpid = dpid;

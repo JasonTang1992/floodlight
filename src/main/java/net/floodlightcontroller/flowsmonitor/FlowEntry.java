@@ -1,6 +1,7 @@
 package net.floodlightcontroller.flowsmonitor;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.projectfloodlight.openflow.protocol.match.Match;
 
@@ -11,7 +12,7 @@ public class FlowEntry {
 	private long byteCounter;
 	private long packetCounter;
 	private float duringTime;
-	private HashMap<Double,Double> rateMap;
+	private HashMap<Double,Double> rateMap = new HashMap<Double,Double>();
 	
 	public FlowEntry(Match matchfield, int tableID, long dpid) {
 		this.matchfield = matchfield;
@@ -68,5 +69,25 @@ public class FlowEntry {
 	
 	public void addRate(double d, double e) {
 		this.rateMap.put(Double.valueOf(d), Double.valueOf(e));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		FlowEntry flow = (FlowEntry)obj;
+		Iterator ita,itb;
+		ita = this.getMatchfield().getMatchFields().iterator();
+		itb = flow.getMatchfield().getMatchFields().iterator();
+		while(ita.hasNext() && itb.hasNext()) {
+			if(!ita.next().toString().equals(itb.next().toString())) {
+				return false;
+			}
+		}
+		if(		this.getTableID() == flow.getTableID() &&
+				this.getDpid() == flow.getDpid()) {
+			return true;
+		}else 
+		{
+			return false;
+		}
 	}
 }

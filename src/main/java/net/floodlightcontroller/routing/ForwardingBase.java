@@ -82,7 +82,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
 	public static int FLOWMOD_DEFAULT_HARD_TIMEOUT = 0; // infinite
 	public static int FLOWMOD_DEFAULT_PRIORITY = 1; // 0 is the default table-miss flow in OF1.3+, so we need to use 1
 	
-	protected static boolean FLOWMOD_DEFAULT_SET_SEND_FLOW_REM_FLAG = false;
+	protected static boolean FLOWMOD_DEFAULT_SET_SEND_FLOW_REM_FLAG = true;
 	
 	protected static boolean FLOWMOD_DEFAULT_MATCH_VLAN = true;
 	protected static boolean FLOWMOD_DEFAULT_MATCH_MAC = true;

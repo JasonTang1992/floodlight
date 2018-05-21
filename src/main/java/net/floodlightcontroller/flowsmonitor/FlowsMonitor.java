@@ -44,7 +44,7 @@ import net.floodlightcontroller.restserver.RestletRoutable;
 public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFSwitchListener, IRestApiService {
 	private String Name = "floodlightcontroller.flowsmonitor.FlowsMonitor";
 	private IFloodlightProviderService floodlightProvider;
-	private SwitchSet switchSet;
+	private SwitchSet switchSet = new SwitchSet();
 	private IRestApiService restApiService;
 	@Override
 	public String getName() {
@@ -66,7 +66,9 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 	@Override
 	public void switchAdded(DatapathId switchId) {
 //		this.globalView.addSwitches(switchId);
-		this.switchSet.addSwitch(switchId.getLong());
+//		this.switchSet.addSwitch(switchId.getLong());
+		System.out.println("New Switch Added:");
+		System.out.println(switchId.getLong());
 	}
 
 	@Override
@@ -108,7 +110,7 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 		// TODO Auto-generated method stub
 		Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
 		l.add(IFloodlightProviderService.class);
-		l.add(IRestApiService.class);
+//		l.add(IRestApiService.class);
 		return l;
 	}
 
@@ -116,7 +118,8 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 	public void init(FloodlightModuleContext context) throws FloodlightModuleException {
 		// TODO Auto-generated method stub
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
-		restApiService = context.getServiceImpl(IRestApiService.class);
+		System.out.println("Hello world");
+//		restApiService = context.getServiceImpl(IRestApiService.class);
 	}
 
 	@Override
@@ -131,10 +134,14 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 	@Override
 	public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
 		// TODO Auto-generated method stub
+		System.out.println(sw.getId().getLong());
+		this.switchSet.addSwitch(sw.getId().getLong());
+		System.out.println(msg.getType().toString());
 		switch(msg.getType()) {
 		case FLOW_MOD:
 			OFFlowMod flowMod = (OFFlowMod)msg;
 			System.out.println(flowMod.getMatch().toString());
+			Iterator it = flowMod.getMatch().getMatchFields().iterator();
 			if(flowMod.getCommand().compareTo(OFFlowModCommand.ADD) == 0) {
 				Match matchField = flowMod.getMatch();
 				Switch s = this.switchSet.getSwitch(sw.getId().getLong());
@@ -191,7 +198,7 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 		default:
 			;
 		}
-		return null;
+		return Command.CONTINUE;
 	}
 
 	@Override
