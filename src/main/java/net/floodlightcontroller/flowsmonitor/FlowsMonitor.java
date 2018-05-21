@@ -134,6 +134,7 @@ public class FlowsMonitor implements IOFMessageListener, IFloodlightModule, IOFS
 		switch(msg.getType()) {
 		case FLOW_MOD:
 			OFFlowMod flowMod = (OFFlowMod)msg;
+			System.out.println(flowMod.getMatch().toString());
 			if(flowMod.getCommand().compareTo(OFFlowModCommand.ADD) == 0) {
 				Match matchField = flowMod.getMatch();
 				Switch s = this.switchSet.getSwitch(sw.getId().getLong());
